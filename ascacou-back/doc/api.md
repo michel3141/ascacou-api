@@ -1,7 +1,22 @@
 # API Ascacou
 
 API JSON:API servie par Graphiti, sous `/api/v1`, consommée par le front avec spraypaint.
-Schéma complet et explorateur : `/api/v1/vandal`.
+
+## Schéma
+
+- **En développement**, le serveur sert l'explorateur Vandal (`/api/v1/vandal`) et le schéma
+  à jour, généré à chaque requête : `/api/v1/vandal/schema.json`. Le front peut le télécharger.
+- **En production**, ni Vandal ni le schéma ne sont servis : le front embarque le schéma dans
+  son build.
+- **`doc/schema.json`** est le schéma de référence, commité. Il n'est pas généré : on le
+  récupère du serveur de dev quand l'API change.
+
+  ```sh
+  curl -s localhost:3000/api/v1/vandal/schema.json | python3 -m json.tool --no-ensure-ascii > doc/schema.json
+  ```
+
+  La spec `spec/schema_spec.rb` échoue si l'API courante n'est plus compatible avec lui
+  (attribut supprimé, type changé…) : c'est le signal d'un commit `feat!`.
 
 ## Principes
 

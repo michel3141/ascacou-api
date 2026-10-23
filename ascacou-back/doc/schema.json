@@ -1,0 +1,1054 @@
+{
+    "resources": [
+        {
+            "name": "GameResource",
+            "type": "games",
+            "graphql_entrypoint": "games",
+            "description": "Partie d'un salon. POST /games { room_id } lance la partie suivante. Chaque PATCH modifie un seul attribut, qui désigne l'action (voir chaque attribut). Les champs calculés (board, legal_moves…) sont en lecture seule.",
+            "attributes": {
+                "id": {
+                    "type": "integer_id",
+                    "readable": true,
+                    "writable": true,
+                    "description": null
+                },
+                "room_id": {
+                    "type": "integer",
+                    "readable": false,
+                    "writable": "guarded",
+                    "description": "Code du salon, pour lancer la partie suivante (la précédente doit être terminée)."
+                },
+                "number": {
+                    "type": "integer",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Rang de la partie dans le salon (1, 2, …)."
+                },
+                "status": {
+                    "type": "string_enum",
+                    "readable": true,
+                    "writable": false,
+                    "description": "drafting (pioche), playing ou finished."
+                },
+                "host_hand": {
+                    "type": "array_of_integers",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Cartes-motifs (0 à 15) de l'hôte."
+                },
+                "guest_hand": {
+                    "type": "array_of_integers",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Cartes-motifs (0 à 15) de l'invité."
+                },
+                "first_player_id": {
+                    "type": "integer",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "Joueur qui commence. PATCH avec l'id de l'adversaire : laisser la main (avant le 1er coup)."
+                },
+                "opening_color": {
+                    "type": "string",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "Pion imposé : couleur du premier pion, choisie par le second joueur (black ou white)."
+                },
+                "takeback_requested": {
+                    "type": "boolean",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "Demande d'annulation en cours. true : demander (après avoir joué) ; false : refuser (adversaire). Accepter : DELETE /moves/:id."
+                },
+                "result": {
+                    "type": "string",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "host, guest ou draw. PATCH avec le rôle de l'adversaire : abandonner ; avec son propre rôle : réclamer la victoire (adversaire absent depuis 2 minutes)."
+                },
+                "end_reason": {
+                    "type": "string",
+                    "readable": true,
+                    "writable": false,
+                    "description": "score, resign (abandon) ou claim (victoire réclamée)."
+                },
+                "lock_version": {
+                    "type": "integer",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "Version de la partie. À renvoyer avec une modification : si elle est dépassée, 409."
+                },
+                "board": {
+                    "type": "string",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Plateau, rangées séparées par / : b noir, w blanc, . vide (\"b..../...../..w../...../.....\")."
+                },
+                "current_player_id": {
+                    "type": "integer",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Joueur qui doit agir : piocher, choisir la couleur d'ouverture ou jouer."
+                },
+                "awaiting_opening_color": {
+                    "type": "boolean",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Pion imposé : le second joueur doit choisir la couleur du premier pion."
+                },
+                "required_color": {
+                    "type": "string",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Couleur imposée au prochain coup, ou null si le choix est libre."
+                },
+                "score": {
+                    "type": "hash",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Motifs reproduits de chaque jeu : { host, guest }."
+                },
+                "blocked_coords": {
+                    "type": "array_of_strings",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Cases où aucune couleur n'est jouable (« pions verts »)."
+                },
+                "legal_moves": {
+                    "type": "hash",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Cases jouables et couleurs permises : { \"1x1\": [\"black\", \"white\"], … }."
+                }
+            },
+            "extra_attributes": {},
+            "sorts": {
+                "id": {}
+            },
+            "filters": {
+                "id": {
+                    "type": "integer_id",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "gt",
+                        "gte",
+                        "lt",
+                        "lte"
+                    ]
+                },
+                "room_id": {
+                    "type": "integer",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "gt",
+                        "gte",
+                        "lt",
+                        "lte"
+                    ]
+                },
+                "number": {
+                    "type": "integer",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "gt",
+                        "gte",
+                        "lt",
+                        "lte"
+                    ]
+                },
+                "status": {
+                    "type": "string_enum",
+                    "operators": [
+                        "eq"
+                    ],
+                    "allow": [
+                        "drafting",
+                        "playing",
+                        "finished"
+                    ]
+                },
+                "host_hand": {
+                    "type": "array_of_integers",
+                    "operators": [
+                        "eq"
+                    ]
+                },
+                "guest_hand": {
+                    "type": "array_of_integers",
+                    "operators": [
+                        "eq"
+                    ]
+                },
+                "first_player_id": {
+                    "type": "integer",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "gt",
+                        "gte",
+                        "lt",
+                        "lte"
+                    ]
+                },
+                "opening_color": {
+                    "type": "string",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "eql",
+                        "not_eql",
+                        "prefix",
+                        "not_prefix",
+                        "suffix",
+                        "not_suffix",
+                        "match",
+                        "not_match"
+                    ]
+                },
+                "takeback_requested": {
+                    "type": "boolean",
+                    "operators": [
+                        "eq"
+                    ],
+                    "single": true
+                },
+                "result": {
+                    "type": "string",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "eql",
+                        "not_eql",
+                        "prefix",
+                        "not_prefix",
+                        "suffix",
+                        "not_suffix",
+                        "match",
+                        "not_match"
+                    ]
+                },
+                "end_reason": {
+                    "type": "string",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "eql",
+                        "not_eql",
+                        "prefix",
+                        "not_prefix",
+                        "suffix",
+                        "not_suffix",
+                        "match",
+                        "not_match"
+                    ]
+                },
+                "lock_version": {
+                    "type": "integer",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "gt",
+                        "gte",
+                        "lt",
+                        "lte"
+                    ]
+                },
+                "board": {
+                    "type": "string",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "eql",
+                        "not_eql",
+                        "prefix",
+                        "not_prefix",
+                        "suffix",
+                        "not_suffix",
+                        "match",
+                        "not_match"
+                    ]
+                },
+                "current_player_id": {
+                    "type": "integer",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "gt",
+                        "gte",
+                        "lt",
+                        "lte"
+                    ]
+                },
+                "awaiting_opening_color": {
+                    "type": "boolean",
+                    "operators": [
+                        "eq"
+                    ],
+                    "single": true
+                },
+                "required_color": {
+                    "type": "string",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "eql",
+                        "not_eql",
+                        "prefix",
+                        "not_prefix",
+                        "suffix",
+                        "not_suffix",
+                        "match",
+                        "not_match"
+                    ]
+                },
+                "score": {
+                    "type": "hash",
+                    "operators": [
+                        "eq"
+                    ]
+                },
+                "blocked_coords": {
+                    "type": "array_of_strings",
+                    "operators": [
+                        "eq"
+                    ]
+                },
+                "legal_moves": {
+                    "type": "hash",
+                    "operators": [
+                        "eq"
+                    ]
+                }
+            },
+            "relationships": {
+                "room": {
+                    "type": "belongs_to",
+                    "description": "Salon de la partie.",
+                    "resource": "RoomResource",
+                    "linkage": true
+                },
+                "first_player": {
+                    "type": "belongs_to",
+                    "description": "Joueur qui commence.",
+                    "resource": "UserResource",
+                    "linkage": true
+                },
+                "moves": {
+                    "type": "has_many",
+                    "description": "Coups, dans l'ordre.",
+                    "resource": "MoveResource"
+                },
+                "picks": {
+                    "type": "has_many",
+                    "description": "Cartes piochées (distribution pioche), dans l'ordre.",
+                    "resource": "PickResource"
+                }
+            },
+            "stats": {
+                "total": [
+                    "count"
+                ]
+            }
+        },
+        {
+            "name": "MoveResource",
+            "type": "moves",
+            "graphql_entrypoint": "moves",
+            "description": "Coup joué. POST /moves : jouer. DELETE /moves/:id : accepter la demande d'annulation de ce coup (le dernier).",
+            "attributes": {
+                "id": {
+                    "type": "integer_id",
+                    "readable": true,
+                    "writable": true,
+                    "description": null
+                },
+                "game_id": {
+                    "type": "integer",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "Partie où jouer le coup."
+                },
+                "rank": {
+                    "type": "integer",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "Numéro du coup (1, 2, …). S'il est envoyé et n'est pas le prochain : refus stale."
+                },
+                "coord": {
+                    "type": "string",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "Case \"LxC\", ligne et colonne de 1 à 5."
+                },
+                "color": {
+                    "type": "string",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "black ou white."
+                },
+                "next_color": {
+                    "type": "string",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "Pion imposé : couleur imposée à l'adversaire (obligatoire sauf si le coup termine la partie)."
+                }
+            },
+            "extra_attributes": {},
+            "sorts": {
+                "id": {},
+                "rank": {}
+            },
+            "filters": {
+                "id": {
+                    "type": "integer_id",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "gt",
+                        "gte",
+                        "lt",
+                        "lte"
+                    ]
+                },
+                "game_id": {
+                    "type": "integer",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "gt",
+                        "gte",
+                        "lt",
+                        "lte"
+                    ]
+                },
+                "rank": {
+                    "type": "integer",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "gt",
+                        "gte",
+                        "lt",
+                        "lte"
+                    ]
+                },
+                "coord": {
+                    "type": "string",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "eql",
+                        "not_eql",
+                        "prefix",
+                        "not_prefix",
+                        "suffix",
+                        "not_suffix",
+                        "match",
+                        "not_match"
+                    ]
+                },
+                "color": {
+                    "type": "string",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "eql",
+                        "not_eql",
+                        "prefix",
+                        "not_prefix",
+                        "suffix",
+                        "not_suffix",
+                        "match",
+                        "not_match"
+                    ]
+                },
+                "next_color": {
+                    "type": "string",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "eql",
+                        "not_eql",
+                        "prefix",
+                        "not_prefix",
+                        "suffix",
+                        "not_suffix",
+                        "match",
+                        "not_match"
+                    ]
+                }
+            },
+            "relationships": {
+                "game": {
+                    "type": "belongs_to",
+                    "description": "Partie du coup.",
+                    "resource": "GameResource",
+                    "linkage": true
+                }
+            },
+            "stats": {
+                "total": [
+                    "count"
+                ]
+            },
+            "default_sort": [
+                {
+                    "rank": "asc"
+                }
+            ]
+        },
+        {
+            "name": "PickResource",
+            "type": "picks",
+            "graphql_entrypoint": "picks",
+            "description": "Carte piochée (distribution pioche). À tour de rôle, en commençant par le joueur qui ne commence pas la partie, chacun place une carte libre dans l'un des deux jeux, jusqu'à 8 + 8.",
+            "attributes": {
+                "id": {
+                    "type": "integer_id",
+                    "readable": true,
+                    "writable": true,
+                    "description": null
+                },
+                "game_id": {
+                    "type": "integer",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "Partie en cours de pioche."
+                },
+                "rank": {
+                    "type": "integer",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Numéro de la pioche (1 à 16)."
+                },
+                "card": {
+                    "type": "integer",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "Carte-motif, de 0 à 15."
+                },
+                "hand": {
+                    "type": "string_enum",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "Jeu qui reçoit la carte : host ou guest."
+                }
+            },
+            "extra_attributes": {},
+            "sorts": {
+                "id": {},
+                "rank": {}
+            },
+            "filters": {
+                "id": {
+                    "type": "integer_id",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "gt",
+                        "gte",
+                        "lt",
+                        "lte"
+                    ]
+                },
+                "game_id": {
+                    "type": "integer",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "gt",
+                        "gte",
+                        "lt",
+                        "lte"
+                    ]
+                },
+                "rank": {
+                    "type": "integer",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "gt",
+                        "gte",
+                        "lt",
+                        "lte"
+                    ]
+                },
+                "card": {
+                    "type": "integer",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "gt",
+                        "gte",
+                        "lt",
+                        "lte"
+                    ]
+                },
+                "hand": {
+                    "type": "string_enum",
+                    "operators": [
+                        "eq"
+                    ],
+                    "allow": [
+                        "host",
+                        "guest"
+                    ]
+                }
+            },
+            "relationships": {
+                "game": {
+                    "type": "belongs_to",
+                    "description": "Partie de la pioche.",
+                    "resource": "GameResource",
+                    "linkage": true
+                }
+            },
+            "stats": {
+                "total": [
+                    "count"
+                ]
+            },
+            "default_sort": [
+                {
+                    "rank": "asc"
+                }
+            ]
+        },
+        {
+            "name": "RoomResource",
+            "type": "rooms",
+            "graphql_entrypoint": "rooms",
+            "description": "Salon : deux joueurs, des réglages fixes et une suite de parties dont le score se cumule. L'id est le code du salon (lien de partage). Un salon privé en attente n'est pas listé. Rejoindre : PATCH { guest_id: <moi> }. Fermer : PATCH { status: \"closed\" }.",
+            "attributes": {
+                "id": {
+                    "type": "string",
+                    "readable": true,
+                    "writable": false,
+                    "description": null
+                },
+                "code_label": {
+                    "type": "string",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Code à afficher, avec accents : « chevelure · serpent · caméléon »."
+                },
+                "visibility": {
+                    "type": "string_enum",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "public : listé dans le salon d'accueil ; private (par défaut) : accessible par son lien."
+                },
+                "deal_method": {
+                    "type": "string_enum",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "Distribution des cartes : random (par défaut), inverse, fifty, max, ou draft (pioche)."
+                },
+                "allow_multiple": {
+                    "type": "boolean",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "Variante motif multiple : un motif peut apparaître plusieurs fois, un seul point."
+                },
+                "imposed_color": {
+                    "type": "boolean",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "Variante pion imposé : l'adversaire choisit la couleur du pion à jouer."
+                },
+                "status": {
+                    "type": "string_enum",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "waiting, playing ou closed. PATCH \"closed\" ferme le salon (une partie en cours est perdue)."
+                },
+                "guest_id": {
+                    "type": "integer",
+                    "readable": true,
+                    "writable": "guarded",
+                    "description": "Invité. PATCH avec son propre id pour rejoindre un salon en attente."
+                },
+                "created_at": {
+                    "type": "datetime",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Ouverture du salon."
+                },
+                "score": {
+                    "type": "hash",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Score cumulé { host, guest } : 1 la victoire, ½ la nulle."
+                }
+            },
+            "extra_attributes": {},
+            "sorts": {
+                "created_at": {}
+            },
+            "filters": {
+                "id": {
+                    "type": "string",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "eql",
+                        "not_eql",
+                        "prefix",
+                        "not_prefix",
+                        "suffix",
+                        "not_suffix",
+                        "match",
+                        "not_match"
+                    ]
+                },
+                "code_label": {
+                    "type": "string",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "eql",
+                        "not_eql",
+                        "prefix",
+                        "not_prefix",
+                        "suffix",
+                        "not_suffix",
+                        "match",
+                        "not_match"
+                    ]
+                },
+                "visibility": {
+                    "type": "string_enum",
+                    "operators": [
+                        "eq"
+                    ],
+                    "allow": [
+                        "public",
+                        "private"
+                    ]
+                },
+                "deal_method": {
+                    "type": "string_enum",
+                    "operators": [
+                        "eq"
+                    ],
+                    "allow": [
+                        "random",
+                        "draft",
+                        "inverse",
+                        "fifty",
+                        "max"
+                    ]
+                },
+                "allow_multiple": {
+                    "type": "boolean",
+                    "operators": [
+                        "eq"
+                    ],
+                    "single": true
+                },
+                "imposed_color": {
+                    "type": "boolean",
+                    "operators": [
+                        "eq"
+                    ],
+                    "single": true
+                },
+                "status": {
+                    "type": "string_enum",
+                    "operators": [
+                        "eq"
+                    ],
+                    "allow": [
+                        "waiting",
+                        "playing",
+                        "closed"
+                    ]
+                },
+                "guest_id": {
+                    "type": "integer",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "gt",
+                        "gte",
+                        "lt",
+                        "lte"
+                    ]
+                },
+                "created_at": {
+                    "type": "datetime",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "gt",
+                        "gte",
+                        "lt",
+                        "lte"
+                    ]
+                },
+                "score": {
+                    "type": "hash",
+                    "operators": [
+                        "eq"
+                    ]
+                }
+            },
+            "relationships": {
+                "host": {
+                    "type": "belongs_to",
+                    "description": "Joueur qui a ouvert le salon.",
+                    "resource": "UserResource",
+                    "linkage": true
+                },
+                "guest": {
+                    "type": "belongs_to",
+                    "description": "Joueur qui a rejoint le salon.",
+                    "resource": "UserResource",
+                    "linkage": true
+                },
+                "games": {
+                    "type": "has_many",
+                    "description": "Parties du salon, dans l'ordre.",
+                    "resource": "GameResource"
+                }
+            },
+            "stats": {
+                "total": [
+                    "count"
+                ]
+            },
+            "public_id": "code"
+        },
+        {
+            "name": "UserResource",
+            "type": "users",
+            "graphql_entrypoint": "users",
+            "description": "Joueur anonyme. POST /users le crée et renvoie son jeton (JWT) dans l'en-tête X-JWT.",
+            "attributes": {
+                "id": {
+                    "type": "integer_id",
+                    "readable": true,
+                    "writable": true,
+                    "description": null
+                },
+                "name": {
+                    "type": "string",
+                    "readable": true,
+                    "writable": true,
+                    "description": "Nom affiché, 30 caractères max. Un joueur ne modifie que lui-même."
+                }
+            },
+            "extra_attributes": {},
+            "sorts": {
+                "id": {}
+            },
+            "filters": {
+                "id": {
+                    "type": "integer_id",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "gt",
+                        "gte",
+                        "lt",
+                        "lte"
+                    ]
+                },
+                "name": {
+                    "type": "string",
+                    "operators": [
+                        "eq",
+                        "not_eq",
+                        "eql",
+                        "not_eql",
+                        "prefix",
+                        "not_prefix",
+                        "suffix",
+                        "not_suffix",
+                        "match",
+                        "not_match"
+                    ]
+                }
+            },
+            "relationships": {},
+            "stats": {
+                "total": [
+                    "count"
+                ]
+            }
+        }
+    ],
+    "endpoints": {
+        "/api/v1/games": {
+            "actions": {
+                "index": {
+                    "resource": "GameResource"
+                },
+                "show": {
+                    "resource": "GameResource"
+                },
+                "create": {
+                    "resource": "GameResource"
+                },
+                "update": {
+                    "resource": "GameResource"
+                }
+            }
+        },
+        "/api/v1/moves": {
+            "actions": {
+                "index": {
+                    "resource": "MoveResource"
+                },
+                "show": {
+                    "resource": "MoveResource"
+                },
+                "create": {
+                    "resource": "MoveResource"
+                },
+                "destroy": {
+                    "resource": "MoveResource"
+                }
+            }
+        },
+        "/api/v1/picks": {
+            "actions": {
+                "index": {
+                    "resource": "PickResource"
+                },
+                "show": {
+                    "resource": "PickResource"
+                },
+                "create": {
+                    "resource": "PickResource"
+                }
+            }
+        },
+        "/api/v1/rooms": {
+            "actions": {
+                "index": {
+                    "resource": "RoomResource"
+                },
+                "show": {
+                    "resource": "RoomResource"
+                },
+                "create": {
+                    "resource": "RoomResource"
+                },
+                "update": {
+                    "resource": "RoomResource"
+                }
+            }
+        },
+        "/api/v1/users": {
+            "actions": {
+                "show": {
+                    "resource": "UserResource"
+                },
+                "create": {
+                    "resource": "UserResource"
+                },
+                "update": {
+                    "resource": "UserResource"
+                }
+            }
+        }
+    },
+    "types": {
+        "array": {
+            "kind": "array",
+            "description": "Base Type."
+        },
+        "array_of_big_decimals": {
+            "kind": "array",
+            "description": "Base Type."
+        },
+        "array_of_dates": {
+            "kind": "array",
+            "description": "Base Type."
+        },
+        "array_of_datetimes": {
+            "kind": "array",
+            "description": "Base Type."
+        },
+        "array_of_floats": {
+            "kind": "array",
+            "description": "Base Type."
+        },
+        "array_of_integer_enums": {
+            "kind": "array",
+            "description": "Base Type."
+        },
+        "array_of_integer_ids": {
+            "kind": "array",
+            "description": "Base Type."
+        },
+        "array_of_integers": {
+            "kind": "array",
+            "description": "Base Type."
+        },
+        "array_of_string_enums": {
+            "kind": "array",
+            "description": "Base Type."
+        },
+        "array_of_strings": {
+            "kind": "array",
+            "description": "Base Type."
+        },
+        "array_of_uuids": {
+            "kind": "array",
+            "description": "Base Type."
+        },
+        "big_decimal": {
+            "kind": "scalar",
+            "description": "Base Type."
+        },
+        "boolean": {
+            "kind": "scalar",
+            "description": "Base Type."
+        },
+        "date": {
+            "kind": "scalar",
+            "description": "Base Type."
+        },
+        "datetime": {
+            "kind": "scalar",
+            "description": "Base Type."
+        },
+        "float": {
+            "kind": "scalar",
+            "description": "Base Type."
+        },
+        "hash": {
+            "kind": "record",
+            "description": "Base Type."
+        },
+        "integer": {
+            "kind": "scalar",
+            "description": "Base Type."
+        },
+        "integer_enum": {
+            "kind": "scalar",
+            "description": "Integer enum type. Like a normal integer, but only eq/!eq filters. Limited to only the allowed values."
+        },
+        "integer_id": {
+            "kind": "scalar",
+            "description": "Base Type. Query/persist as integer, render as string."
+        },
+        "string": {
+            "kind": "scalar",
+            "description": "Base Type."
+        },
+        "string_enum": {
+            "kind": "scalar",
+            "description": "String enum type. Like a normal string, but only eq/!eq and case-sensitive. Limited to only the allowed values."
+        },
+        "uuid": {
+            "kind": "scalar",
+            "description": "Base Type. Like a normal string, but by default only eq/!eq and case-sensitive."
+        }
+    }
+}

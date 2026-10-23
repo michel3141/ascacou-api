@@ -99,4 +99,3 @@ RSpec.configure do |config|
   config.include Graphiti::SpecHelpers::RSpec
 end
 
-Graphiti::SpecHelpers::RSpec.schema!

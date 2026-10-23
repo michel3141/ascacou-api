@@ -5,7 +5,8 @@ Rails.application.routes.draw do
     resources :games, only: %i[index show create update]
     resources :moves, only: %i[index show create destroy]
     resources :picks, only: %i[index show create]
-    mount VandalUi::Engine, at: "/vandal"
+    # Explorateur et schéma en direct : développement seulement.
+    mount VandalUi::Engine, at: "/vandal" if Rails.env.development?
     # your routes go here
   end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
