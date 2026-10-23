@@ -1,0 +1,108 @@
+# Workflow de release (back)
+
+La version n'est jamais choisie à l'avance : elle est **calculée à chaque build**
+d'après les types de commits depuis le dernier tag (`bin/bump`). Une correction
+ajoutée avant le tag peut donc la changer (un `feat` après des `fix`) : le build
+suivant en tient compte, le CHANGELOG aussi.
+Entre deux releases, `VERSION` indique la dernière version publiée ;
+`make version` montre où en est le code et ce que serait la prochaine version.
+
+```
+                 ┌────────────────────────┐
+                 │ développement          │
+                 │ - commits typés        │
+                 │ - make check           │
+                 │ - make schema (si API) │
+                 └───────────┬────────────┘
+                             │
+                             ▼
+                 ┌────────────────────────┐
+           ┌────▶│ prepare-release        │
+           │     │ - arbre propre         │
+           │     │ - quelque chose à      │
+           │     │   publier ?            │
+           │     │ - check                │
+           │     └───────────┬────────────┘
+           │                 │
+           │                 ▼
+           │     ┌────────────────────────┐
+           │     │ build                  │◀──┐
+           │     │ (0..n fois)            │   │ corriger avant le tag :
+           │     │ - check                │   │ commits (fix:…), puis
+           │     │ - VERSION calculée     │   │ build à nouveau
+           │     │ - brouillon CHANGELOG  │   │
+           │     │ - image :<version>     │   │
+           │     │ - image :latest        │───┘
+           │     └───────────┬────────────┘
+           │                 │
+           │                 ▼
+           │       relire / retoucher le CHANGELOG
+           │       (après le dernier build)
+           │                 │
+           │                 ▼
+           │     ┌────────────────────────┐
+           │     │ release (une fois)     │
+           │     │ - commit chore(release)│
+           │     │ - tag vX.Y.Z           │
+           │     │ - push : pas encore    │
+           │     └───────────┬────────────┘
+           │                 │
+           │                 ▼
+           │     ┌────────────────────────┐
+           │     │ validation réelle      │
+           │     │ (image, déploiement,   │
+           │     │  recette)              │
+           │     └──────┬──────────┬──────┘
+           │            │          │
+           │     échec  │          │ succès
+           │            ▼          ▼
+           │  ┌───────────────┐  ┌──────────────────┐
+           │  │ corriger      │  │ rien à faire :   │
+           └──│ (commits fix:)│  │ pas de bump après│
+              └───────────────┘  │ la release       │
+                                 └──────────────────┘
+```
+
+## Recettes, dans l'ordre
+
+Toutes se lancent depuis `back/`.
+
+1. **`make version`** — informatif : version publiée, position git, prochaine version.
+2. **`make prepare-release`** — test que l'arbre est prêt pour une release
+3. **`make build`** — autant de fois que nécessaire (tests de l'image) : calcule la version et build `ascacou-back:<version>` et `ascacou-back:latest`
+
+   **Tant que rien n'est tagué, on peut corriger le code** : commiter les corrections,
+   **sans** `VERSION` ni `CHANGELOG.md` (`git add <fichiers>`, pas `git commit -a`),
+   puis relancer `make build`. Garde-fous :
+   - `build` refuse une modification non commitée (hors `VERSION` et `CHANGELOG.md`) :
+     l'image contiendrait du code absent du tag ;
+   - `release` refuse si un commit a été ajouté depuis le dernier `build`.
+
+4. **Relire `ascacou-back/CHANGELOG.md`**, une fois, **après le dernier build**, et le retoucher si besoin.
+5. **`make release`** — une seule fois : commit, tag et (TODO)pousse
+6. **Validation réelle** de l'image publiée.
+
+En cas de doute sur l'étape en cours : le fichier `.release-state` contient
+`prepared`, `built <commit construit>` ou `released`.
+
+## Types de commits
+
+Format : `<type>: <description en français>` (scope optionnel : `feat(api): …`).
+
+| Type       | Pour                                            | Version                                             |
+|------------|-------------------------------------------------|-----------------------------------------------------|
+| `fix`      | correction de bug                               | patch (0.1.0 → 0.1.1)                               |
+| `perf`     | performance                                     | patch                                               |
+| `feat`     | nouvelle fonctionnalité                         | minor (0.1.0 → 0.2.0)                               |
+| `feat!`    | changement cassant (ou pied `BREAKING CHANGE:`) | major (1.0.0 → 2.0.0), minor en 0.x (0.1.0 → 0.2.0) |
+| `docs`     | documentation                                   | pas de release                                      |
+| `refactor` | réorganisation sans changement de comportement  | pas de release                                      |
+| `test`     | tests                                           | pas de release                                      |
+| `chore`    | maintenance, outillage, release                 | pas de release                                      |
+| `ci`       | intégration continue                            | pas de release                                      |
+
+Le CHANGELOG reprend `feat`, `feat!`, `fix`, `perf`, `refactor` et `docs`.
+
+**Changement cassant de l'API** : la spec `spec/schema_spec.rb` échoue quand l'API
+n'est plus compatible avec `doc/schema.json`. Si c'est voulu : commit en `feat!`,
+puis `make schema` pour mettre la référence à jour.

@@ -12,7 +12,7 @@ API JSON:API servie par Graphiti, sous `/api/v1`, consommée par le front avec s
   récupère du serveur de dev quand l'API change.
 
   ```sh
-  curl -s localhost:3000/api/v1/vandal/schema.json | python3 -m json.tool --no-ensure-ascii > doc/schema.json
+  make schema   # depuis back/ : curl du schéma de dev, indenté pour des diffs lisibles
   ```
 
   La spec `spec/schema_spec.rb` échoue si l'API courante n'est plus compatible avec lui

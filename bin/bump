@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# Version de l'application, calculée au moment de la release d'après les types
+# de commits depuis le dernier tag (modèle « version calculée à la release »).
+#
+#   fix:, perf:                 → patch
+#   feat:                       → minor
+#   feat!: (ou BREAKING CHANGE) → major (minor tant que la version est en 0.x)
+#   docs, refactor, test, chore, ci, style, build → pas de release
+#
+# Simplifié d'après l'outil `bump` de l'auteur : uniquement un fichier VERSION.
+set -euo pipefail
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") <commande>
+
+  v | version     version publiée (VERSION) et position git
+  V | get         version publiée seule
+  N | peek        version de la prochaine release, sans rien écrire
+  n | next        écrit la prochaine version dans VERSION
+  l | changelog   entrée du CHANGELOG pour la version courante (stdout)
+  L | write-changelog
+                  écrit cette entrée en tête de CHANGELOG.md ; remplace le
+                  brouillon (entrée d'une version pas encore taguée)
+
+Fichiers : \$APP_DIR/VERSION et \$APP_DIR/CHANGELOG.md (APP_DIR=${APP_DIR:-ascacou-back}).
+EOF
+  exit 1
+}
+
+[[ $# -eq 1 ]] || usage
+
+ROOT=$(git rev-parse --show-toplevel)
+cd "$ROOT"
+APP_DIR=${APP_DIR:-ascacou-back}
+VERSION_FILE="$APP_DIR/VERSION"
+CHANGELOG="$APP_DIR/CHANGELOG.md"
+SEMVER='^[0-9]+\.[0-9]+\.[0-9]+$'
+
+# Types retenus : les mêmes motifs servent au calcul et au CHANGELOG.
+BREAKING='^[a-z]+(\([^)]*\))?!:'
+FEATURE='^feat(\([^)]*\))?:'
+FIX='^(fix|perf)(\([^)]*\))?:'
+LISTED='^(feat|fix|perf|refactor|docs)(\([^)]*\))?!?:'
+
+version() {
+  local v
+  v=$(tr -d '[:space:]' < "$VERSION_FILE")
+  [[ "$v" =~ $SEMVER ]] || { echo "Version invalide dans $VERSION_FILE : '$v'" >&2; exit 1; }
+  echo "$v"
+}
+
+last_tag() {
+  git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true
+}
+
+# Commits depuis le dernier tag (tout l'historique s'il n'y en a pas encore).
+commit_range() {
+  local tag
+  tag=$(last_tag)
+  if [[ -n "$tag" ]]; then echo "$tag..HEAD"; else echo "HEAD"; fi
+}
+
+next_version() {
+  local tag base major minor patch subjects bodies
+  tag=$(last_tag)
+  base=${tag#v}
+  base=${base:-0.0.0}
+  IFS=. read -r major minor patch <<<"$base"
+  subjects=$(git log "$(commit_range)" --format=%s)
+  bodies=$(git log "$(commit_range)" --format=%b)
+
+  if grep -Eq "$BREAKING" <<<"$subjects" || grep -q '^BREAKING CHANGE:' <<<"$bodies"; then
+    if (( major == 0 )); then minor=$((minor + 1)); patch=0
+    else major=$((major + 1)); minor=0; patch=0
+    fi
+  elif grep -Eq "$FEATURE" <<<"$subjects"; then
+    minor=$((minor + 1)); patch=0
+  elif grep -Eq "$FIX" <<<"$subjects"; then
+    patch=$((patch + 1))
+  else
+    echo "Rien à publier depuis ${tag:-le début} (seulement docs, refactor, test, chore…)" >&2
+    return 1
+  fi
+  echo "$major.$minor.$patch"
+}
+
+changelog() {
+  local v
+  v=$(version)
+  if git rev-parse -q --verify "refs/tags/v$v" >/dev/null; then
+    echo "v$v est déjà taguée : lancer d'abord « $(basename "$0") next »" >&2
+    exit 1
+  fi
+  echo "# $v"
+  echo
+  # Séparateurs ASCII : enregistrement \x1e, champ \x1f.
+  git log "$(commit_range)" --date=format:%Y-%m-%d --format='%x1e%ad%x1f%s%x1f%b' |
+    awk -v RS='\036' -F '\037' -v listed="$LISTED" '
+      NF >= 2 && $2 ~ listed {
+        printf "%s %s\n", $1, $2
+        body = $3
+        sub(/\n+$/, "", body)
+        n = split(body, lines, "\n")
+        for (i = 1; i <= n; i++)
+          if (lines[i] !~ /^(Co-Authored-By|Claude-Session):/)
+            printf "           %s\n", lines[i]
+      }'
+  echo
+}
+
+case "$1" in
+  v|version)
+    echo "version : $(version)"
+    echo "git     : $(git describe --tags --long --always --dirty 2>/dev/null | sed -E 's/-g[0-9a-f]+//')"
+    echo "suivante: $(next_version 2>/dev/null || echo '(rien à publier)')"
+    ;;
+  V|get) version ;;
+  N|peek) next_version ;;
+  n|next)
+    current=$(version)
+    new=$(next_version)
+    if [[ "$new" == "$current" ]]; then
+      echo "VERSION est déjà $new"
+    else
+      echo "$new" > "$VERSION_FILE"
+      echo "VERSION : $current → $new"
+    fi
+    ;;
+  l|changelog) changelog ;;
+  L|write-changelog)
+    # Brouillon : l'entrée du haut, si sa version dépasse la dernière publiée.
+    # Elle est régénérée à chaque appel (titre et commits à jour).
+    v=$(version)
+    entry=$(changelog)
+    touch "$CHANGELOG"
+    top=$(sed -n 's/^# \([0-9.]*\)$/\1/p' "$CHANGELOG" | head -1)
+    published=$(last_tag); published=${published#v}; published=${published:-0.0.0}
+    if [[ -n "$top" && "$top" != "$published" ]] &&
+       [[ "$(printf '%s\n' "$top" "$published" | sort -V | tail -1)" == "$top" ]]; then
+      # Retire le brouillon : tout jusqu'au titre d'entrée suivant.
+      rest=$(awk 'NR > 1 && /^# [0-9]/ { found = 1 } found' "$CHANGELOG")
+      echo "CHANGELOG : brouillon $top remplacé par $v"
+    else
+      rest=$(cat "$CHANGELOG")
+      echo "CHANGELOG : entrée $v ajoutée"
+    fi
+    {
+      echo "$entry"
+      if [[ -n "$rest" ]]; then echo; echo "$rest"; fi
+    } > "$CHANGELOG.tmp"
+    mv "$CHANGELOG.tmp" "$CHANGELOG"
+    ;;
+  *) usage ;;
+esac

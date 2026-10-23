@@ -7,3 +7,6 @@ previous-version/
 .DS_Store
 ._*
 Thumbs.db
+
+# État du workflow de release (Makefile)
+.release-state

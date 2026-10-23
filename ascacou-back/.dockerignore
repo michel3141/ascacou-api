@@ -36,3 +36,7 @@
 # Ignore Docker-related files
 /.dockerignore
 /Dockerfile*
+
+# Relu et retouché après le build : ne doit pas faire partie de l'image
+# (le commit tagué doit rester identique à ce qui a été construit).
+/CHANGELOG.md
