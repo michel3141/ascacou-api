@@ -98,4 +98,3 @@ require "graphiti/spec_helpers/rspec"
 RSpec.configure do |config|
   config.include Graphiti::SpecHelpers::RSpec
 end
-
