@@ -1,0 +1,862 @@
+diff --git a/app/controllers/comments_controller.rb b/app/controllers/comments_controller.rb
+new file mode 100644
+index 0000000..1caf226
+--- /dev/null
++++ b/app/controllers/comments_controller.rb
+@@ -0,0 +1,51 @@
++class CommentsController < ApplicationController
++  # With Graphiti::Rails::Responders included, these blocks collapse to
++  # respond_with(comments). See https://graphiti.dev/getting-started/installation#responders
++  def index
++    comments = CommentResource.all(params)
++
++    respond_to do |format|
++      format.jsonapi { render jsonapi: comments }
++      format.json { render json: comments }
++    end
++  end
++
++  def show
++    comment = CommentResource.find(params)
++
++    respond_to do |format|
++      format.jsonapi { render jsonapi: comment }
++      format.json { render json: comment }
++    end
++  end
++
++  def create
++    comment = CommentResource.build(params)
++
++    if comment.save
++      render jsonapi: comment, status: 201
++    else
++      render jsonapi_errors: comment
++    end
++  end
++
++  def update
++    comment = CommentResource.find(params)
++
++    if comment.update
++      render jsonapi: comment
++    else
++      render jsonapi_errors: comment
++    end
++  end
++
++  def destroy
++    comment = CommentResource.find(params)
++
++    if comment.destroy
++      render jsonapi: { meta: {} }, status: 200
++    else
++      render jsonapi_errors: comment
++    end
++  end
++end
+diff --git a/app/controllers/posts_controller.rb b/app/controllers/posts_controller.rb
+new file mode 100644
+index 0000000..88f11a7
+--- /dev/null
++++ b/app/controllers/posts_controller.rb
+@@ -0,0 +1,51 @@
++class PostsController < ApplicationController
++  # With Graphiti::Rails::Responders included, these blocks collapse to
++  # respond_with(posts). See https://graphiti.dev/getting-started/installation#responders
++  def index
++    posts = PostResource.all(params)
++
++    respond_to do |format|
++      format.jsonapi { render jsonapi: posts }
++      format.json { render json: posts }
++    end
++  end
++
++  def show
++    post = PostResource.find(params)
++
++    respond_to do |format|
++      format.jsonapi { render jsonapi: post }
++      format.json { render json: post }
++    end
++  end
++
++  def create
++    post = PostResource.build(params)
++
++    if post.save
++      render jsonapi: post, status: 201
++    else
++      render jsonapi_errors: post
++    end
++  end
++
++  def update
++    post = PostResource.find(params)
++
++    if post.update
++      render jsonapi: post
++    else
++      render jsonapi_errors: post
++    end
++  end
++
++  def destroy
++    post = PostResource.find(params)
++
++    if post.destroy
++      render jsonapi: { meta: {} }, status: 200
++    else
++      render jsonapi_errors: post
++    end
++  end
++end
+diff --git a/app/controllers/top_posts_controller.rb b/app/controllers/top_posts_controller.rb
+new file mode 100644
+index 0000000..fd48262
+--- /dev/null
++++ b/app/controllers/top_posts_controller.rb
+@@ -0,0 +1,9 @@
++class TopPostsController < ApplicationController
++  def index
++    base_scope = Post.where("upvotes > ?", 100)
++
++    posts = PostResource.all(params, base_scope)
++
++    render jsonapi: posts
++  end
++end
+diff --git a/app/models/comment.rb b/app/models/comment.rb
+new file mode 100644
+index 0000000..8b86c56
+--- /dev/null
++++ b/app/models/comment.rb
+@@ -0,0 +1,3 @@
++class Comment < ApplicationRecord
++  belongs_to :post
++end
+diff --git a/app/models/post.rb b/app/models/post.rb
+new file mode 100644
+index 0000000..4a0df21
+--- /dev/null
++++ b/app/models/post.rb
+@@ -0,0 +1,3 @@
++class Post < ApplicationRecord
++  has_many :comments
++end
+diff --git a/app/resources/comment_resource.rb b/app/resources/comment_resource.rb
+new file mode 100644
+index 0000000..c68cf11
+--- /dev/null
++++ b/app/resources/comment_resource.rb
+@@ -0,0 +1,5 @@
++class CommentResource < ApplicationResource
++  belongs_to :post
++  filter :post_id, :integer
++  attribute :description, :string
++end
+diff --git a/app/resources/post_resource.rb b/app/resources/post_resource.rb
+new file mode 100644
+index 0000000..c0fbb4e
+--- /dev/null
++++ b/app/resources/post_resource.rb
+@@ -0,0 +1,6 @@
++class PostResource < ApplicationResource
++  secondary_endpoint '/top_posts', [:index]
++  has_many :comments
++  attribute :title, :string
++  attribute :upvotes, :integer
++end
+diff --git a/config/routes.rb b/config/routes.rb
+index 1aa41c9..4439499 100644
+--- a/config/routes.rb
++++ b/config/routes.rb
+@@ -1,6 +1,9 @@
+ Rails.application.routes.draw do
+   scope path: "/api/v1", defaults: {format: :jsonapi} do
++    resources :comments
++    resources :posts
+     mount VandalUi::Engine, at: '/vandal'
++    get "/top_posts", to: "top_posts#index"
+     # your routes go here
+   end
+   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+diff --git a/db/migrate/20260915000155_create_posts.rb b/db/migrate/20260915000155_create_posts.rb
+new file mode 100644
+index 0000000..7b93c88
+--- /dev/null
++++ b/db/migrate/20260915000155_create_posts.rb
+@@ -0,0 +1,10 @@
++class CreatePosts < ActiveRecord::Migration[8.1]
++  def change
++    create_table :posts do |t|
++      t.string :title
++      t.integer :upvotes
++
++      t.timestamps
++    end
++  end
++end
+diff --git a/db/migrate/20260915075733_create_comments.rb b/db/migrate/20260915075733_create_comments.rb
+new file mode 100644
+index 0000000..1018cde
+--- /dev/null
++++ b/db/migrate/20260915075733_create_comments.rb
+@@ -0,0 +1,10 @@
++class CreateComments < ActiveRecord::Migration[8.1]
++  def change
++    create_table :comments do |t|
++      t.references :post, null: false, foreign_key: true
++      t.string :description
++
++      t.timestamps
++    end
++  end
++end
+diff --git a/spec/api/v1/comments/create_spec.rb b/spec/api/v1/comments/create_spec.rb
+new file mode 100644
+index 0000000..9799717
+--- /dev/null
++++ b/spec/api/v1/comments/create_spec.rb
+@@ -0,0 +1,29 @@
++require 'rails_helper'
++
++RSpec.describe "comments#create", type: :request do
++  subject(:make_request) do
++    jsonapi_post "/api/v1/comments", payload
++  end
++
++  describe 'basic create' do
++    let(:params) do
++      attributes_for(:comment)
++    end
++    let(:payload) do
++      {
++        data: {
++          type: 'comments',
++          attributes: params
++        }
++      }
++    end
++
++    it 'works' do
++      expect(CommentResource).to receive(:build).and_call_original
++      expect {
++        make_request
++        expect(response.status).to eq(201), response.body
++      }.to change { Comment.count }.by(1)
++    end
++  end
++end
+diff --git a/spec/api/v1/comments/destroy_spec.rb b/spec/api/v1/comments/destroy_spec.rb
+new file mode 100644
+index 0000000..534a16f
+--- /dev/null
++++ b/spec/api/v1/comments/destroy_spec.rb
+@@ -0,0 +1,22 @@
++require 'rails_helper'
++
++RSpec.describe "comments#destroy", type: :request do
++  subject(:make_request) do
++    jsonapi_delete "/api/v1/comments/#{comment.id}"
++  end
++
++  describe 'basic destroy' do
++    let!(:comment) { create(:comment) }
++
++    it 'updates the resource' do
++      expect(CommentResource).to receive(:find).and_call_original
++      expect {
++        make_request
++        expect(response.status).to eq(200), response.body
++      }.to change { Comment.count }.by(-1)
++      expect { comment.reload }
++        .to raise_error(ActiveRecord::RecordNotFound)
++      expect(json).to eq('meta' => {})
++    end
++  end
++end
+diff --git a/spec/api/v1/comments/index_spec.rb b/spec/api/v1/comments/index_spec.rb
+new file mode 100644
+index 0000000..7ce89ce
+--- /dev/null
++++ b/spec/api/v1/comments/index_spec.rb
+@@ -0,0 +1,22 @@
++require 'rails_helper'
++
++RSpec.describe "comments#index", type: :request do
++  let(:params) { {} }
++
++  subject(:make_request) do
++    jsonapi_get "/api/v1/comments", params: params
++  end
++
++  describe 'basic fetch' do
++    let!(:comment1) { create(:comment) }
++    let!(:comment2) { create(:comment) }
++
++    it 'works' do
++      expect(CommentResource).to receive(:all).and_call_original
++      make_request
++      expect(response.status).to eq(200), response.body
++      expect(jsonapi_data.map(&:jsonapi_type).uniq).to match_array(['comments'])
++      expect(jsonapi_data.map(&:id)).to match_array([comment1.id, comment2.id])
++    end
++  end
++end
+diff --git a/spec/api/v1/comments/show_spec.rb b/spec/api/v1/comments/show_spec.rb
+new file mode 100644
+index 0000000..6d6bce7
+--- /dev/null
++++ b/spec/api/v1/comments/show_spec.rb
+@@ -0,0 +1,21 @@
++require 'rails_helper'
++
++RSpec.describe "comments#show", type: :request do
++  let(:params) { {} }
++
++  subject(:make_request) do
++    jsonapi_get "/api/v1/comments/#{comment.id}", params: params
++  end
++
++  describe 'basic fetch' do
++    let!(:comment) { create(:comment) }
++
++    it 'works' do
++      expect(CommentResource).to receive(:find).and_call_original
++      make_request
++      expect(response.status).to eq(200)
++      expect(jsonapi_data.jsonapi_type).to eq('comments')
++      expect(jsonapi_data.id).to eq(comment.id)
++    end
++  end
++end
+diff --git a/spec/api/v1/comments/update_spec.rb b/spec/api/v1/comments/update_spec.rb
+new file mode 100644
+index 0000000..3add899
+--- /dev/null
++++ b/spec/api/v1/comments/update_spec.rb
+@@ -0,0 +1,32 @@
++require 'rails_helper'
++
++RSpec.describe "comments#update", type: :request do
++  subject(:make_request) do
++    jsonapi_put "/api/v1/comments/#{comment.id}", payload
++  end
++
++  describe 'basic update' do
++    let!(:comment) { create(:comment) }
++
++    let(:payload) do
++      {
++        data: {
++          id: comment.id.to_s,
++          type: 'comments',
++          attributes: {
++            # ... your attrs here
++          }
++        }
++      }
++    end
++
++    # Replace 'xit' with 'it' after adding attributes
++    xit 'updates the resource' do
++      expect(CommentResource).to receive(:find).and_call_original
++      expect {
++        make_request
++        expect(response.status).to eq(200), response.body
++      }.to change { comment.reload.attributes }
++    end
++  end
++end
+diff --git a/spec/api/v1/posts/create_spec.rb b/spec/api/v1/posts/create_spec.rb
+new file mode 100644
+index 0000000..243b0a0
+--- /dev/null
++++ b/spec/api/v1/posts/create_spec.rb
+@@ -0,0 +1,29 @@
++require 'rails_helper'
++
++RSpec.describe "posts#create", type: :request do
++  subject(:make_request) do
++    jsonapi_post "/api/v1/posts", payload
++  end
++
++  describe 'basic create' do
++    let(:params) do
++      attributes_for(:post)
++    end
++    let(:payload) do
++      {
++        data: {
++          type: 'posts',
++          attributes: params
++        }
++      }
++    end
++
++    it 'works' do
++      expect(PostResource).to receive(:build).and_call_original
++      expect {
++        make_request
++        expect(response.status).to eq(201), response.body
++      }.to change { Post.count }.by(1)
++    end
++  end
++end
+diff --git a/spec/api/v1/posts/destroy_spec.rb b/spec/api/v1/posts/destroy_spec.rb
+new file mode 100644
+index 0000000..0a02efd
+--- /dev/null
++++ b/spec/api/v1/posts/destroy_spec.rb
+@@ -0,0 +1,22 @@
++require 'rails_helper'
++
++RSpec.describe "posts#destroy", type: :request do
++  subject(:make_request) do
++    jsonapi_delete "/api/v1/posts/#{post.id}"
++  end
++
++  describe 'basic destroy' do
++    let!(:post) { create(:post) }
++
++    it 'updates the resource' do
++      expect(PostResource).to receive(:find).and_call_original
++      expect {
++        make_request
++        expect(response.status).to eq(200), response.body
++      }.to change { Post.count }.by(-1)
++      expect { post.reload }
++        .to raise_error(ActiveRecord::RecordNotFound)
++      expect(json).to eq('meta' => {})
++    end
++  end
++end
+diff --git a/spec/api/v1/posts/index_spec.rb b/spec/api/v1/posts/index_spec.rb
+new file mode 100644
+index 0000000..76d1e78
+--- /dev/null
++++ b/spec/api/v1/posts/index_spec.rb
+@@ -0,0 +1,22 @@
++require 'rails_helper'
++
++RSpec.describe "posts#index", type: :request do
++  let(:params) { {} }
++
++  subject(:make_request) do
++    jsonapi_get "/api/v1/posts", params: params
++  end
++
++  describe 'basic fetch' do
++    let!(:post1) { create(:post) }
++    let!(:post2) { create(:post) }
++
++    it 'works' do
++      expect(PostResource).to receive(:all).and_call_original
++      make_request
++      expect(response.status).to eq(200), response.body
++      expect(jsonapi_data.map(&:jsonapi_type).uniq).to match_array(['posts'])
++      expect(jsonapi_data.map(&:id)).to match_array([post1.id, post2.id])
++    end
++  end
++end
+diff --git a/spec/api/v1/posts/show_spec.rb b/spec/api/v1/posts/show_spec.rb
+new file mode 100644
+index 0000000..bdaec77
+--- /dev/null
++++ b/spec/api/v1/posts/show_spec.rb
+@@ -0,0 +1,21 @@
++require 'rails_helper'
++
++RSpec.describe "posts#show", type: :request do
++  let(:params) { {} }
++
++  subject(:make_request) do
++    jsonapi_get "/api/v1/posts/#{post.id}", params: params
++  end
++
++  describe 'basic fetch' do
++    let!(:post) { create(:post) }
++
++    it 'works' do
++      expect(PostResource).to receive(:find).and_call_original
++      make_request
++      expect(response.status).to eq(200)
++      expect(jsonapi_data.jsonapi_type).to eq('posts')
++      expect(jsonapi_data.id).to eq(post.id)
++    end
++  end
++end
+diff --git a/spec/api/v1/posts/update_spec.rb b/spec/api/v1/posts/update_spec.rb
+new file mode 100644
+index 0000000..4d34ae3
+--- /dev/null
++++ b/spec/api/v1/posts/update_spec.rb
+@@ -0,0 +1,32 @@
++require 'rails_helper'
++
++RSpec.describe "posts#update", type: :request do
++  subject(:make_request) do
++    jsonapi_put "/api/v1/posts/#{post.id}", payload
++  end
++
++  describe 'basic update' do
++    let!(:post) { create(:post) }
++
++    let(:payload) do
++      {
++        data: {
++          id: post.id.to_s,
++          type: 'posts',
++          attributes: {
++            # ... your attrs here
++          }
++        }
++      }
++    end
++
++    # Replace 'xit' with 'it' after adding attributes
++    xit 'updates the resource' do
++      expect(PostResource).to receive(:find).and_call_original
++      expect {
++        make_request
++        expect(response.status).to eq(200), response.body
++      }.to change { post.reload.attributes }
++    end
++  end
++end
+diff --git a/spec/factories/comments.rb b/spec/factories/comments.rb
+new file mode 100644
+index 0000000..ea10f3e
+--- /dev/null
++++ b/spec/factories/comments.rb
+@@ -0,0 +1,6 @@
++FactoryBot.define do
++  factory :comment do
++    post { nil }
++    description { "MyString" }
++  end
++end
+diff --git a/spec/factories/posts.rb b/spec/factories/posts.rb
+new file mode 100644
+index 0000000..2ef76c9
+--- /dev/null
++++ b/spec/factories/posts.rb
+@@ -0,0 +1,6 @@
++FactoryBot.define do
++  factory :post do
++    title { "MyString" }
++    upvotes { 1 }
++  end
++end
+diff --git a/spec/models/comment_spec.rb b/spec/models/comment_spec.rb
+new file mode 100644
+index 0000000..c10688d
+--- /dev/null
++++ b/spec/models/comment_spec.rb
+@@ -0,0 +1,5 @@
++require 'rails_helper'
++
++RSpec.describe Comment, type: :model do
++  pending "add some examples to (or delete) #{__FILE__}"
++end
+diff --git a/spec/models/post_spec.rb b/spec/models/post_spec.rb
+new file mode 100644
+index 0000000..f41774c
+--- /dev/null
++++ b/spec/models/post_spec.rb
+@@ -0,0 +1,5 @@
++require 'rails_helper'
++
++RSpec.describe Post, type: :model do
++  pending "add some examples to (or delete) #{__FILE__}"
++end
+diff --git a/spec/resources/comment/reads_spec.rb b/spec/resources/comment/reads_spec.rb
+new file mode 100644
+index 0000000..7b82c19
+--- /dev/null
++++ b/spec/resources/comment/reads_spec.rb
+@@ -0,0 +1,69 @@
++require 'rails_helper'
++
++RSpec.describe CommentResource, type: :resource do
++  describe 'serialization' do
++    let!(:comment) { create(:comment) }
++
++    it 'works' do
++      render
++      data = jsonapi_data[0]
++      expect(data.id).to eq(comment.id)
++      expect(data.jsonapi_type).to eq('comments')
++    end
++  end
++
++  describe 'filtering' do
++    let!(:comment1) { create(:comment) }
++    let!(:comment2) { create(:comment) }
++
++    context 'by id' do
++      before do
++        params[:filter] = { id: { eq: comment2.id } }
++      end
++
++      it 'works' do
++        render
++        expect(jsonapi_data.map(&:id)).to eq([comment2.id])
++      end
++    end
++  end
++
++  describe 'sorting' do
++    describe 'by id' do
++      let!(:comment1) { create(:comment) }
++      let!(:comment2) { create(:comment) }
++
++      context 'when ascending' do
++        before do
++          params[:sort] = 'id'
++        end
++
++        it 'works' do
++          render
++          expect(jsonapi_data.map(&:id)).to eq([
++            comment1.id,
++            comment2.id
++          ])
++        end
++      end
++
++      context 'when descending' do
++        before do
++          params[:sort] = '-id'
++        end
++
++        it 'works' do
++          render
++          expect(jsonapi_data.map(&:id)).to eq([
++            comment2.id,
++            comment1.id
++          ])
++        end
++      end
++    end
++  end
++
++  describe 'sideloading' do
++    # ... your tests ...
++  end
++end
+diff --git a/spec/resources/comment/writes_spec.rb b/spec/resources/comment/writes_spec.rb
+new file mode 100644
+index 0000000..7c07af2
+--- /dev/null
++++ b/spec/resources/comment/writes_spec.rb
+@@ -0,0 +1,63 @@
++require 'rails_helper'
++
++RSpec.describe CommentResource, type: :resource do
++  describe 'creating' do
++    let(:payload) do
++      {
++        data: {
++          type: 'comments',
++          attributes: attributes_for(:comment)
++        }
++      }
++    end
++
++    let(:instance) do
++      CommentResource.build(payload)
++    end
++
++    it 'works' do
++      expect {
++        expect(instance.save).to eq(true), instance.errors.full_messages.to_sentence
++      }.to change { Comment.count }.by(1)
++    end
++  end
++
++  describe 'updating' do
++    let!(:comment) { create(:comment) }
++
++    let(:payload) do
++      {
++        data: {
++          id: comment.id.to_s,
++          type: 'comments',
++          attributes: { } # Todo!
++        }
++      }
++    end
++
++    let(:instance) do
++      CommentResource.find(payload)
++    end
++
++    xit 'works (add some attributes and enable this spec)' do
++      expect {
++        expect(instance.update).to eq(true)
++      }.to change { comment.reload.updated_at }
++      # .and change { comment.foo }.to('bar') <- example
++    end
++  end
++
++  describe 'destroying' do
++    let!(:comment) { create(:comment) }
++
++    let(:instance) do
++      CommentResource.find(id: comment.id)
++    end
++
++    it 'works' do
++      expect {
++        expect(instance.destroy).to eq(true)
++      }.to change { Comment.count }.by(-1)
++    end
++  end
++end
+diff --git a/spec/resources/post/reads_spec.rb b/spec/resources/post/reads_spec.rb
+new file mode 100644
+index 0000000..ead4ad1
+--- /dev/null
++++ b/spec/resources/post/reads_spec.rb
+@@ -0,0 +1,69 @@
++require 'rails_helper'
++
++RSpec.describe PostResource, type: :resource do
++  describe 'serialization' do
++    let!(:post) { create(:post) }
++
++    it 'works' do
++      render
++      data = jsonapi_data[0]
++      expect(data.id).to eq(post.id)
++      expect(data.jsonapi_type).to eq('posts')
++    end
++  end
++
++  describe 'filtering' do
++    let!(:post1) { create(:post) }
++    let!(:post2) { create(:post) }
++
++    context 'by id' do
++      before do
++        params[:filter] = { id: { eq: post2.id } }
++      end
++
++      it 'works' do
++        render
++        expect(jsonapi_data.map(&:id)).to eq([post2.id])
++      end
++    end
++  end
++
++  describe 'sorting' do
++    describe 'by id' do
++      let!(:post1) { create(:post) }
++      let!(:post2) { create(:post) }
++
++      context 'when ascending' do
++        before do
++          params[:sort] = 'id'
++        end
++
++        it 'works' do
++          render
++          expect(jsonapi_data.map(&:id)).to eq([
++            post1.id,
++            post2.id
++          ])
++        end
++      end
++
++      context 'when descending' do
++        before do
++          params[:sort] = '-id'
++        end
++
++        it 'works' do
++          render
++          expect(jsonapi_data.map(&:id)).to eq([
++            post2.id,
++            post1.id
++          ])
++        end
++      end
++    end
++  end
++
++  describe 'sideloading' do
++    # ... your tests ...
++  end
++end
+diff --git a/spec/resources/post/writes_spec.rb b/spec/resources/post/writes_spec.rb
+new file mode 100644
+index 0000000..948e8e9
+--- /dev/null
++++ b/spec/resources/post/writes_spec.rb
+@@ -0,0 +1,63 @@
++require 'rails_helper'
++
++RSpec.describe PostResource, type: :resource do
++  describe 'creating' do
++    let(:payload) do
++      {
++        data: {
++          type: 'posts',
++          attributes: attributes_for(:post)
++        }
++      }
++    end
++
++    let(:instance) do
++      PostResource.build(payload)
++    end
++
++    it 'works' do
++      expect {
++        expect(instance.save).to eq(true), instance.errors.full_messages.to_sentence
++      }.to change { Post.count }.by(1)
++    end
++  end
++
++  describe 'updating' do
++    let!(:post) { create(:post) }
++
++    let(:payload) do
++      {
++        data: {
++          id: post.id.to_s,
++          type: 'posts',
++          attributes: { } # Todo!
++        }
++      }
++    end
++
++    let(:instance) do
++      PostResource.find(payload)
++    end
++
++    xit 'works (add some attributes and enable this spec)' do
++      expect {
++        expect(instance.update).to eq(true)
++      }.to change { post.reload.updated_at }
++      # .and change { post.foo }.to('bar') <- example
++    end
++  end
++
++  describe 'destroying' do
++    let!(:post) { create(:post) }
++
++    let(:instance) do
++      PostResource.find(id: post.id)
++    end
++
++    it 'works' do
++      expect {
++        expect(instance.destroy).to eq(true)
++      }.to change { Post.count }.by(-1)
++    end
++  end
++end

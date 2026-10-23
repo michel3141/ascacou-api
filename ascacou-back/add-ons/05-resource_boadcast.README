@@ -1,0 +1,7 @@
+app/models/application_record.rb
+class ApplicationRecord < ActiveRecord::Base
+  primary_abstract_class
+
+  include ResourceBroadcast ## cette ligne
+end
+

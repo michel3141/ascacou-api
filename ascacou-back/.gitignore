@@ -1,0 +1,83 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Rails
+/log/*
+/tmp/*
+/storage/*
+/public/assets/
+/public/packs/
+/public/packs-test/
+/public/uploads/
+
+# Ignore generated files
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Rails credentials / master key
+/config/master.key
+/config/credentials/*.key
+
+# Bundler
+/.bundle/
+/vendor/bundle/
+
+# Ruby
+*.gem
+/.yardoc/
+/.yardoc/
+/coverage/
+/rdoc/
+/spec/reports/
+/tmp/
+
+# RSpec
+.rspec_status
+
+# Spring
+/spring/
+
+# Node / Yarn
+/node_modules/
+/.yarn/cache/
+/.yarn/unplugged/
+/.yarn/build-state.yml
+/.yarn/install-state.gz
+.yarnrc.yml
+
+# Ignore compiled assets
+/public/assets
+/public/packs
+/public/packs-test
+
+# Database
+*.sqlite3
+*.sqlite3-*
+/db/*.sqlite3
+
+# macOS
+.DS_Store
+
+# Linux
+*~
+
+# IDE / editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# RuboCop
+.rubocop-https?*
+
+# Fichiers à garder
+!/log/.keep
+!/tmp/.keep
+!/tmp/pids/.keep
+!/storage/.keep
+!/tmp/storage/.keep
+

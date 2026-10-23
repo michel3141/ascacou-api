@@ -1,0 +1,9 @@
+# Les règles propres à l'app Rails sont dans ascacou-back/.gitignore.
+
+# Anciennes versions, gardées hors dépôt
+previous-version/
+
+# Fichiers système
+.DS_Store
+._*
+Thumbs.db

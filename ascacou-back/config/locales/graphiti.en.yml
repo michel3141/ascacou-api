@@ -1,0 +1,37 @@
+# For another language, add a block below or a graphiti.<locale>.yml file.
+en:
+  graphiti:
+    errors:
+      # Keyed by error code. Edit any value to reword it. Comments name what
+      # raises each code, relative to Graphiti::Errors.
+      bad_request:
+        # InvalidRequest, RemoteWrite, SingularSideload, InvalidInclude,
+        # UnsupportedSort, UnsupportedOperator, InvalidFilterValue,
+        # RequiredFilter, UnsupportedPageSize, UnsupportedBeforeCursor,
+        # UnsupportedPagination, FilterGroupMissingRequiredFilters,
+        # UnknownAttribute, InvalidAttributeAccess
+        title: "Request Error"
+      not_found:
+        # RecordNotFound
+        title: "Not Found"
+      conflict:
+        # ConflictRequest
+        title: "Conflict Error"
+      unprocessable_entity:
+        # a write that failed model validations
+        title: "Validation Error"
+      internal_server_error:
+        # any exception Graphiti did not register
+        title: "Internal Server Error"
+        detail: "We've probably received an error report already, but please contact us if the issue persists."
+      # format joins the two below: "data.attributes.title is an unknown attribute".
+      format: "%{attribute} %{message}"
+      messages:
+        missing: "is missing"
+        invalid: "must be an object"
+        invalid_relationship: "is not a valid relationship"
+        unwritable_relationship: "cannot be written"
+        unknown_attribute: "is an unknown attribute"
+        unwritable_attribute: "cannot be written"
+        type_error: "should be type %{type}"
+        attribute_mismatch: "does not match the server endpoint"

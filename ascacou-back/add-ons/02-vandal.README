@@ -1,0 +1,15 @@
+modifié :         public/api/v0/vandal/index.html
+supprimé :        public/api/v1/vandal/js/app.d38ac258.js
+supprimé :        public/api/v1/vandal/js/app.d38ac258.js.map
+modifié :         public/api/v1/vandal/js/app.f85601e5.js
+
+
+public/api/v1/vandal/index.html
+<meta name=schema content=/schema.json> devient <meta name=schema content=./schema.json>
+
+supprime deux fichiers non requis
+et applique deux patchs :
+https://github.com/graphiti-api/vandal/issues/14
+et un autre du même style :
+.attributes || {}
+

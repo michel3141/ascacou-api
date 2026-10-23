@@ -1,0 +1,40 @@
+diff --git a/Gemfile b/Gemfile
+index 05a271d..85ebec1 100644
+--- a/Gemfile
++++ b/Gemfile
+@@ -25,7 +25,7 @@ gem "bootsnap", require: false
+ gem "image_processing", "~> 1.2"
+ 
+ # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin Ajax possible
+-# gem "rack-cors"
++gem "rack-cors"
+ 
+ group :development, :test do
+   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
+diff --git a/config/initializers/cors.rb b/config/initializers/cors.rb
+index 0c5dd99..4c1fdf0 100644
+--- a/config/initializers/cors.rb
++++ b/config/initializers/cors.rb
+@@ -5,12 +5,13 @@
+ 
+ # Read more: https://github.com/cyu/rack-cors
+ 
+-# Rails.application.config.middleware.insert_before 0, Rack::Cors do
+-#   allow do
+-#     origins "example.com"
+-#
+-#     resource "*",
+-#       headers: :any,
+-#       methods: [:get, :post, :put, :patch, :delete, :options, :head]
+-#   end
+-# end
++Rails.application.config.middleware.insert_before 0, Rack::Cors do
++  allow do
++    origins "*"
++
++    resource "*",
++      headers: :any,
++      expose: ['X-JWT'], ## pour plus tard
++      methods: [:get, :post, :put, :patch, :delete, :options, :head]
++  end
++end

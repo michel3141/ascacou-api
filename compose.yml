@@ -1,0 +1,74 @@
+name: "ascacou-back"
+
+
+x-env: &default-env
+  TZ: Europe/Paris
+
+services:
+  backend:
+    image: docker.lespyjamasrouges.fr/lpr/ruby-dev:4.0.6
+
+    working_dir: /workspace
+#    command: sleep infinity
+    command: bash -lc 'eval "$(~/.local/bin/mise activate bash)" && bin/setup'
+
+    volumes:
+      - ./ascacou-back:/workspace:cached
+      - vscode-home-backend:/home/vscode
+      - /home/claude/cache/vscode_mise_installs:/home/vscode/.local/share/mise/installs
+
+    ports:
+      - "3000:3000" # app web
+
+    environment:
+      <<: *default-env
+      DB_HOST: postgres
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      VANDAL_USER: toto
+      RAILS_ENV: development
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+    tty: true
+    stdin_open: true
+
+    # Uncomment pour utiliser un user non-root
+    # user: vscode
+
+  postgres:
+    image: postgres:16.1
+
+    restart: unless-stopped
+
+    # ports:
+    #  - "5432:5432"
+
+    environment:
+      <<: *default-env
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ascacou-back_development
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+    tty: true
+    stdin_open: true
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
+  vscode-home-backend:
+#   bundle-data:
+#   mise-data:
+#   bash-history:
