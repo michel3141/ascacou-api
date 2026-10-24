@@ -17,6 +17,10 @@ class Game < ApplicationRecord
   enum :end_reason, { score: "score", resign: "resign", claim: "claim" }, prefix: :ended_by, validate: { allow_nil: true }
 
   validates :number, numericality: { only_integer: true, greater_than: 0 }
+
+  # Toute commande sauvegarde la partie (lock_version augmente) : une seule annonce
+  # suffit, coups et pioches compris.
+  after_commit { RoomChannel.game_changed(self) }
   validates :opening_color, inclusion: { in: COLORS }, allow_nil: true
   validate :first_player_is_a_player
 

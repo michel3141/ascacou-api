@@ -7,6 +7,7 @@ class Room < ApplicationRecord
   belongs_to :guest, class_name: "User", inverse_of: :joined_rooms, optional: true
   has_many :games, -> { order(:number) }, dependent: :destroy, inverse_of: :room
   has_many :presences, class_name: "RoomPresence", dependent: :delete_all
+  has_many :viewers, class_name: "RoomViewer", dependent: :delete_all
 
   enum :visibility, { public: "public", private: "private" }, prefix: true, validate: true
   enum :status, { waiting: "waiting", playing: "playing", closed: "closed" }, validate: true
@@ -15,6 +16,11 @@ class Room < ApplicationRecord
   before_validation(on: :create) { self.code ||= Ascacou::RoomCode.generate { |code| !Room.exists?(code:) } }
   validates :code, presence: true, uniqueness: true
   validate :guest_is_not_host
+
+  after_commit do
+    RoomChannel.room_changed(self)
+    LobbyChannel.room_changed(self)
+  end
 
   def code_label
     Ascacou::RoomCode.label(code)

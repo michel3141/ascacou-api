@@ -219,9 +219,49 @@ Action : `POST /picks`.
 | `invalid_card`, `card_taken` | carte inconnue ou déjà placée |
 | `invalid_hand`, `hand_full` | jeu inconnu, ou déjà 8 cartes |
 
-## Synchronisation (à venir)
+## Synchronisation (ActionCable)
 
-ActionCable : après chaque écriture, le serveur diffuse la nouvelle version de la partie
-ou du salon ; le client recharge quand la version reçue est plus récente que la sienne, et
-systématiquement à chaque (re)connexion. Le cable porte aussi la présence (pour la
-victoire réclamée) et les messages prédéfinis, éphémères.
+Le cable **annonce** ; il ne transporte pas l'état. Le client recharge par l'API
+JSON:API quand une annonce lui apprend qu'il est en retard. Toutes les actions de jeu
+passent par l'API (HTTP), jamais par le cable.
+
+**Connexion** : `ws(s)://<hôte>/cable?token=<jwt>`. Un navigateur ne peut pas ajouter
+d'en-tête à une connexion WebSocket, d'où le jeton dans l'URL (filtré des logs Rails).
+Sans jeton : spectateur anonyme. Jeton invalide ou expiré : connexion refusée (le
+client doit d'abord obtenir un jeton valide par l'API).
+
+Origines acceptées : celles de `CORS_ORIGINS` (toutes si `*`, en développement).
+
+### `RoomChannel` — `{ channel: "RoomChannel", code: <code du salon> }`
+
+Pour les joueurs et les spectateurs. Les joueurs du salon ont une présence nommée ; tout
+autre abonné, identifié ou non, est un spectateur : compté, pas nommé. Messages reçus
+(champ `type`) :
+
+| `type` | Quand | Contenu |
+|---|---|---|
+| `sync` | à chaque abonnement, donc à chaque (re)connexion | `room` (id, status, guest_id, games_count), `game` (id, number, status, `version`), `present` (ids des joueurs présents), `viewers` (nombre de spectateurs) |
+| `room` | le salon a changé (invité, statut, partie suivante) | `room` |
+| `game` | la partie a changé (coup, pioche, annulation, fin…) | `game`, dont `version` = `lock_version` |
+| `presence` | signe de vie ou départ d'un joueur | `user_id`, `present` |
+| `viewers` | arrivée ou départ d'un spectateur | `count` |
+| `message` | message prédéfini d'un joueur | `user_id`, `message` (code) |
+
+**Resynchronisation** : à la réception de `sync` (après une coupure réseau, une veille,
+un rechargement), comparer `game.version` avec la version locale et recharger la partie
+si elle est en retard, ou s'il s'agit d'une autre partie. Même règle pour chaque `game`.
+Un message manqué pendant une coupure n'est donc jamais un problème : le `sync` de la
+reconnexion le rattrape.
+
+Actions (`perform`) :
+
+| Action | Données | Rôle |
+|---|---|---|
+| `ping` | — | signe de vie, **toutes les 30 s**, joueurs **et spectateurs**. Sans signe de vie depuis 2 minutes, un joueur est absent (son adversaire peut réclamer la victoire) et un spectateur n'est plus compté. |
+| `say` | `{ message }` | message prédéfini, joueurs seulement, au plus un toutes les 3 s. Codes : `hello` (Bonjour !), `good_game` (Bonne partie !), `thinking` (Je réfléchis…), `well_played` (Bien joué !), `oops` (Oups !), `wow` (Waouh !), `thanks` (Merci !), `bye` (À bientôt !). Les autres sont ignorés. Rien n'est stocké. |
+
+### `LobbyChannel` — `{ channel: "LobbyChannel" }`
+
+Salon d'accueil : annonce `{ type: "room", id, status }` quand un salon listé change
+(public, ou en cours pour les spectateurs). Le client recharge `GET /rooms`. Un salon
+privé en attente n'est jamais annoncé.
