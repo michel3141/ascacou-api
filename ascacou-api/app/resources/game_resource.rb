@@ -60,6 +60,11 @@ class GameResource < ApplicationResource
     @object.board.realized_patterns.sort
   end
 
+  attribute :last_move, :hash,
+    description: "Dernier pion posé : { coord, color, rank }, ou null avant le premier coup." do
+    @object.moves.last&.slice(:coord, :color, :rank)
+  end
+
   attribute :blocked_coords, :array_of_strings,
     description: "Cases où aucune couleur n'est jouable (« pions verts »)." do
     @object.blocked_coords

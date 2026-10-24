@@ -118,6 +118,7 @@ RSpec.describe "API de jeu", type: :request do
       expect(attributes["legal_moves"]["1x1"]).to eq(%w[black white])
       expect(attributes["score"]).to eq("host" => 0, "guest" => 0)
       expect(attributes["realized_patterns"]).to eq([])
+      expect(attributes["last_move"]).to be_nil
       expect(body.dig("data", "relationships", "room", "data", "id")).to eq(game.room.code)
     end
 
@@ -130,6 +131,8 @@ RSpec.describe "API de jeu", type: :request do
       jsonapi_get "/api/v1/games/#{game.id}"
       # HG HD BG BD = noir noir noir blanc => 0b0001
       expect(body.dig("data", "attributes", "realized_patterns")).to eq([ 1 ])
+      expect(body.dig("data", "attributes", "last_move"))
+        .to eq("coord" => "2x2", "color" => "white", "rank" => 4)
     end
 
     it "se jouent par POST /moves et refusent un coup hors tour avec un code" do
@@ -158,6 +161,8 @@ RSpec.describe "API de jeu", type: :request do
       jsonapi_delete "/api/v1/moves/#{move_id}", headers: auth(second)
       expect(response.status).to eq(200), response.body
       expect(game.reload.moves).to be_empty
+      jsonapi_get "/api/v1/games/#{game.id}"
+      expect(body.dig("data", "attributes", "last_move")).to be_nil
     end
 
     it "s'abandonnent en donnant le résultat à l'adversaire" do

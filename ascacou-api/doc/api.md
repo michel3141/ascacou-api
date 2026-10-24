@@ -135,6 +135,7 @@ Filtres utiles : `filter[status]`, `filter[visibility]`.
 | `blocked_coords` | L | cases où aucune couleur n'est jouable (« pions verts ») |
 | `score` | L | `{ host, guest }` : motifs reproduits de chaque jeu |
 | `realized_patterns` | L | motifs (0 à 15) présents sur le plateau : une carte est reproduite si sa valeur y figure |
+| `last_move` | L | dernier pion posé : `{ coord, color, rank }`, ou `null` avant le premier coup (suit les annulations) |
 
 Relations : `room`, `first_player` (user), `moves`, `picks`. Filtre : `filter[room_id]`.
 

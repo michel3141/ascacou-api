@@ -114,6 +114,12 @@
                     "writable": false,
                     "description": "Motifs (0 à 15) présents sur le plateau ; une carte est reproduite si sa valeur y figure."
                 },
+                "last_move": {
+                    "type": "hash",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Dernier pion posé : { coord, color, rank }, ou null avant le premier coup."
+                },
                 "blocked_coords": {
                     "type": "array_of_strings",
                     "readable": true,
@@ -318,6 +324,12 @@
                 },
                 "realized_patterns": {
                     "type": "array_of_integers",
+                    "operators": [
+                        "eq"
+                    ]
+                },
+                "last_move": {
+                    "type": "hash",
                     "operators": [
                         "eq"
                     ]
