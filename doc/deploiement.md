@@ -2,7 +2,8 @@
 
 Conteneur Docker de l'app Rails (`ascacou-back/Dockerfile`) : Puma sert l'API et
 ActionCable (`/cable`). TLS (HTTPS / WSS) assuré par **Caddy** devant le conteneur.
-L'image est construite par `make build` (voir `WORKFLOW.md`).
+Image : `docker.lespyjamasrouges.fr/ascacou/api` (tags `<version>` et `latest`),
+construite par `make build` et poussée par `make release` (voir `WORKFLOW.md`).
 
 ## Fronts servis
 
@@ -62,5 +63,3 @@ migrations.
 - **Domaine de l'API** (`BASE_URL`) : sous-domaine dédié, ou même domaine que le front
   avec Caddy qui route `/api` et `/cable` vers le conteneur (le front web est alors de
   même origine ; `CORS_ORIGINS` reste nécessaire pour l'app Capacitor).
-- **Registre Docker et push** : premiers push à la main ; à automatiser dans
-  `make release` ensuite.

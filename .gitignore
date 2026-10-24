@@ -10,3 +10,6 @@ Thumbs.db
 
 # État du workflow de release (Makefile)
 .release-state
+
+# Fichiers d'éditeur
+*.swp

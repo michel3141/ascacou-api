@@ -9,7 +9,7 @@
 #   make build            check, VERSION calculée, brouillon du CHANGELOG régénéré,
 #                         image Docker (autant de fois que nécessaire)
 #   (relire le CHANGELOG après le dernier build)
-#   make release          commit « chore(release) » + tag ; rien n'est poussé pour l'instant
+#   make release          commit « chore(release) » + tag, push de l'image (pas de git push)
 #
 # Avant le tag, on peut corriger le code : par des commits, puis make build à nouveau
 # (la version et le CHANGELOG suivent). Invariant : le commit tagué est exactement
@@ -18,7 +18,7 @@
 # à prepare-release. Un tag publié n'est jamais réutilisé.
 
 APP := ascacou-back
-IMAGE := ascacou-back
+IMAGE := docker.lespyjamasrouges.fr/ascacou/api
 STATE := .release-state
 RELEASE_FILES := $(APP)/VERSION $(APP)/CHANGELOG.md
 DOCKER ?= docker
@@ -91,4 +91,6 @@ release: check-release-files check-version check-changelog
 	git commit -m "chore(release): $(version)"
 	git tag -a "v$(version)" -m "chore(release): v$(version)"
 	@echo released > $(STATE)
-	@echo "v$(version) taguée localement. Rien n'a été poussé (git, image)."
+	$(DOCKER) push $(IMAGE):$(version)
+	$(DOCKER) push $(IMAGE):latest
+	@echo "v$(version) taguée localement, image poussée. Git n'est pas poussé."

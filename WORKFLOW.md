@@ -44,7 +44,7 @@ Entre deux releases, `VERSION` indique la dernière version publiée ;
            │     │ release (une fois)     │
            │     │ - commit chore(release)│
            │     │ - tag vX.Y.Z           │
-           │     │ - push : pas encore    │
+           │     │ - push de l'image      │
            │     └───────────┬────────────┘
            │                 │
            │                 ▼
@@ -69,7 +69,7 @@ Toutes se lancent depuis `back/`.
 
 1. **`make version`** — informatif : version publiée, position git, prochaine version.
 2. **`make prepare-release`** — test que l'arbre est prêt pour une release
-3. **`make build`** — autant de fois que nécessaire (tests de l'image) : calcule la version et build `ascacou-back:<version>` et `ascacou-back:latest`
+3. **`make build`** — autant de fois que nécessaire (tests de l'image) : calcule la version et build `docker.lespyjamasrouges.fr/ascacou/api:<version>` et `:latest`
 
    **Tant que rien n'est tagué, on peut corriger le code** : commiter les corrections,
    **sans** `VERSION` ni `CHANGELOG.md` (`git add <fichiers>`, pas `git commit -a`),
@@ -79,7 +79,7 @@ Toutes se lancent depuis `back/`.
    - `release` refuse si un commit a été ajouté depuis le dernier `build`.
 
 4. **Relire `ascacou-back/CHANGELOG.md`**, une fois, **après le dernier build**, et le retoucher si besoin.
-5. **`make release`** — une seule fois : commit, tag et (TODO)pousse
+5. **`make release`** — une seule fois : commit, tag et push de l'image (le push git reste à la main)
 6. **Validation réelle** de l'image publiée.
 
 En cas de doute sur l'étape en cours : le fichier `.release-state` contient
