@@ -108,11 +108,11 @@
                     "writable": false,
                     "description": "Motifs reproduits de chaque jeu : { host, guest }."
                 },
-                "realized_patterns": {
-                    "type": "array_of_integers",
+                "realized_squares": {
+                    "type": "array",
                     "readable": true,
                     "writable": false,
-                    "description": "Motifs (0 à 15) présents sur le plateau ; une carte est reproduite si sa valeur y figure."
+                    "description": "Carrés complets du plateau : [{ pattern, coord }], coord = case en haut à gauche ; une carte est reproduite si sa valeur y figure."
                 },
                 "last_move": {
                     "type": "hash",
@@ -322,8 +322,8 @@
                         "eq"
                     ]
                 },
-                "realized_patterns": {
-                    "type": "array_of_integers",
+                "realized_squares": {
+                    "type": "array",
                     "operators": [
                         "eq"
                     ]

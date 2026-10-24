@@ -36,6 +36,8 @@ RSpec.describe Ascacou::Board do
     it "un pion noir entre les deux blancs reproduit deux motifs" do
       expect(board.legal?("2x3", :black)).to be(true)
       expect(board.place("2x3", :black).realized_patterns).to contain_exactly(2, 1)
+      expect(board.place("2x3", :black).squares)
+        .to eq([ { pattern: 2, coord: "1x2" }, { pattern: 1, coord: "1x3" } ])
     end
 
     it "un pion blanc entre les deux blancs reproduirait deux fois le même motif" do

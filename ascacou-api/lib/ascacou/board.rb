@@ -69,6 +69,15 @@ module Ascacou
       patterns.uniq
     end
 
+    # Carrés complets, dans l'ordre du plateau : motif et position de la case en haut à
+    # gauche ("LxC"). En variante motif multiple, un motif peut y figurer plusieurs fois.
+    def squares
+      WINDOWS.filter_map do |window|
+        pattern = self.class.pattern_of(window.map { |i| cells[i] })
+        { pattern:, coord: COORDS[window.first] } if pattern
+      end
+    end
+
     def duplicates?
       patterns.size != realized_patterns.size
     end

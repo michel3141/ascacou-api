@@ -55,9 +55,10 @@ class GameResource < ApplicationResource
     @object.score
   end
 
-  attribute :realized_patterns, :array_of_integers,
-    description: "Motifs (0 à 15) présents sur le plateau ; une carte est reproduite si sa valeur y figure." do
-    @object.board.realized_patterns.sort
+  attribute :realized_squares, :array,
+    description: "Carrés complets du plateau : [{ pattern, coord }], coord = case en haut à gauche ; " \
+                 "une carte est reproduite si sa valeur y figure." do
+    @object.board.squares
   end
 
   attribute :last_move, :hash,

@@ -117,7 +117,7 @@ RSpec.describe "API de jeu", type: :request do
       expect(attributes["current_player_id"]).to eq(first.id)
       expect(attributes["legal_moves"]["1x1"]).to eq(%w[black white])
       expect(attributes["score"]).to eq("host" => 0, "guest" => 0)
-      expect(attributes["realized_patterns"]).to eq([])
+      expect(attributes["realized_squares"]).to eq([])
       expect(attributes["last_move"]).to be_nil
       expect(body.dig("data", "relationships", "room", "data", "id")).to eq(game.room.code)
     end
@@ -130,7 +130,7 @@ RSpec.describe "API de jeu", type: :request do
       end
       jsonapi_get "/api/v1/games/#{game.id}"
       # HG HD BG BD = noir noir noir blanc => 0b0001
-      expect(body.dig("data", "attributes", "realized_patterns")).to eq([ 1 ])
+      expect(body.dig("data", "attributes", "realized_squares")).to eq([ { "pattern" => 1, "coord" => "1x1" } ])
       expect(body.dig("data", "attributes", "last_move"))
         .to eq("coord" => "2x2", "color" => "white", "rank" => 4)
     end
