@@ -17,7 +17,7 @@
 # Si la validation de la release échoue : corriger (commits fix:), puis reprendre
 # à prepare-release. Un tag publié n'est jamais réutilisé.
 
-APP := ascacou-back
+APP := ascacou-api
 IMAGE := docker.lespyjamasrouges.fr/ascacou/api
 STATE := .release-state
 RELEASE_FILES := $(APP)/VERSION $(APP)/CHANGELOG.md

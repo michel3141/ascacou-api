@@ -1,4 +1,4 @@
-# Les règles propres à l'app Rails sont dans ascacou-back/.gitignore.
+# Les règles propres à l'app Rails sont dans ascacou-api/.gitignore.
 
 # Anciennes versions, gardées hors dépôt
 previous-version/
@@ -13,3 +13,6 @@ Thumbs.db
 
 # Fichiers d'éditeur
 *.swp
+
+# Secrets de prod-compose.yaml
+.env

@@ -1,4 +1,4 @@
-name: "ascacou-back"
+name: "ascacou-api"
 
 
 x-env: &default-env
@@ -13,7 +13,7 @@ services:
     command: bash -lc 'eval "$(~/.local/bin/mise activate bash)" && bin/setup'
 
     volumes:
-      - ./ascacou-back:/workspace:cached
+      - ./ascacou-api:/workspace:cached
       - vscode-home-backend:/home/vscode
       - /home/claude/cache/vscode_mise_installs:/home/vscode/.local/share/mise/installs
 
@@ -52,7 +52,7 @@ services:
       <<: *default-env
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ascacou-back_development
+      POSTGRES_DB: ascacou_api_development
 
     volumes:
       - postgres-data:/var/lib/postgresql/data

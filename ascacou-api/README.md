@@ -1,4 +1,4 @@
-# ascacou-back
+# ascacou-api
 
 Back du jeu Ascacou à deux en ligne : Rails 8.1, Ruby 4, Graphiti (JSON:API), PostgreSQL,
 ActionCable.

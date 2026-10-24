@@ -23,7 +23,7 @@ Usage: $(basename "$0") <commande>
                   écrit cette entrée en tête de CHANGELOG.md ; remplace le
                   brouillon (entrée d'une version pas encore taguée)
 
-Fichiers : \$APP_DIR/VERSION et \$APP_DIR/CHANGELOG.md (APP_DIR=${APP_DIR:-ascacou-back}).
+Fichiers : \$APP_DIR/VERSION et \$APP_DIR/CHANGELOG.md (APP_DIR=${APP_DIR:-ascacou-api}).
 EOF
   exit 1
 }
@@ -32,7 +32,7 @@ EOF
 
 ROOT=$(git rev-parse --show-toplevel)
 cd "$ROOT"
-APP_DIR=${APP_DIR:-ascacou-back}
+APP_DIR=${APP_DIR:-ascacou-api}
 VERSION_FILE="$APP_DIR/VERSION"
 CHANGELOG="$APP_DIR/CHANGELOG.md"
 SEMVER='^[0-9]+\.[0-9]+\.[0-9]+$'

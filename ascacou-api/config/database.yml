@@ -15,8 +15,9 @@
 default: &default
   adapter: postgresql
   encoding: unicode
-  # Threads web + threads de chargement concurrent des sideloads Graphiti (4) + 1.
-  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 }.to_i + 5 %>
+  # Par processus : threads Puma + workers ActionCable (4) + threads de chargement
+  # concurrent des sideloads Graphiti (4) + 1 de marge.
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 3 }.to_i + 9 %>
   host: <%= ENV["DB_HOST"] %>
   username: <%= ENV["DB_USERNAME"] %>
   password: <%= ENV["DB_PASSWORD"] %>
@@ -24,13 +25,13 @@ default: &default
 
 development:
   <<: *default
-  database: ascacou_back_development
+  database: ascacou_api_development
 
   # The specified database role being used to connect to PostgreSQL.
   # To create additional roles in PostgreSQL see `$ createuser --help`.
   # When left blank, PostgreSQL will use the default role. This is
   # the same name as the operating system user running Rails.
-  #username: ascacou_back
+  #username: ascacou_api
 
   # The password associated with the PostgreSQL role (username).
   #password:
@@ -58,7 +59,7 @@ development:
 # Do not set this db to the same as development or production.
 test:
   <<: *default
-  database: ascacou_back_test
+  database: ascacou_api_test
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
@@ -89,18 +90,18 @@ test:
 production:
   primary: &primary_production
     <<: *default
-    database: ascacou_back_production
-    username: ascacou_back
-    password: <%= ENV["ASCACOU_BACK_DATABASE_PASSWORD"] %>
+    database: ascacou_api_production
+    username: ascacou_api
+    password: <%= ENV["ASCACOU_API_DATABASE_PASSWORD"] %>
   cache:
     <<: *primary_production
-    database: ascacou_back_production_cache
+    database: ascacou_api_production_cache
     migrations_paths: db/cache_migrate
   queue:
     <<: *primary_production
-    database: ascacou_back_production_queue
+    database: ascacou_api_production_queue
     migrations_paths: db/queue_migrate
   cable:
     <<: *primary_production
-    database: ascacou_back_production_cable
+    database: ascacou_api_production_cable
     migrations_paths: db/cable_migrate

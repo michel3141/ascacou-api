@@ -78,7 +78,7 @@ Toutes se lancent depuis `back/`.
      l'image contiendrait du code absent du tag ;
    - `release` refuse si un commit a été ajouté depuis le dernier `build`.
 
-4. **Relire `ascacou-back/CHANGELOG.md`**, une fois, **après le dernier build**, et le retoucher si besoin.
+4. **Relire `ascacou-api/CHANGELOG.md`**, une fois, **après le dernier build**, et le retoucher si besoin.
 5. **`make release`** — une seule fois : commit, tag et push de l'image (le push git reste à la main)
 6. **Validation réelle** de l'image publiée.
 
