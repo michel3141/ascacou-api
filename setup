@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+# Installation et mise à jour de l'API Ascacou sur un serveur.
+#
+# Le script travaille dans son propre dossier (dossier de déploiement) :
+#   compose.yaml           extrait de l'image, remplacé à chaque update
+#   .env                   secrets et version en service
+#   compose.override.yaml  réglages du serveur, créé par install puis jamais modifié
+#   backups/               sauvegardes de la base
+#
+# Premier déploiement : copier ce script (back/setup) dans un dossier vide du serveur,
+# puis, après docker login :
+#   ./setup install <tag>
+#
+# Dépendances : docker (avec compose), jq, curl, openssl.
+
+set -euo pipefail
+
+DEFAULT_IMAGE=docker.lespyjamasrouges.fr/ascacou/api
+DATABASE=ascacou_api_production
+DB_USER=ascacou_api
+WAIT_TIMEOUT=180
+
+# Version du contrat entre ce script et deploy/compose.yaml (voir doc/deploiement.md).
+# Le compose d'une image déclare le minimum dont il a besoin (x-setup: N, 1 si absent).
+SETUP_VERSION=1
+
+cd "$(dirname "$0")"
+
+usage() {
+  cat <<EOF
+Usage: $0 <commande> [tag]   (setup $SETUP_VERSION)
+
+  install <tag>   premier déploiement : compose.yaml, .env (secrets générés), démarrage
+  update <tag>    sauvegarde, compose.yaml de la version, démarrage de la version
+  backup          sauvegarde de la base (backups/)
+  versions        versions disponibles sur le registre (identifiants de docker login)
+  status          version en service, état des conteneurs, dernières lignes du log
+
+Image : \$ASCACOU_API_IMAGE à l'installation (défaut : $DEFAULT_IMAGE), puis celle de .env.
+Réglages propres au serveur : compose.override.yaml (jamais modifié par setup).
+EOF
+}
+
+die() { echo "setup: $*" >&2; exit 1; }
+
+for tool in docker jq curl openssl; do
+  command -v "$tool" > /dev/null || die "$tool introuvable (dépendances : docker, jq, curl, openssl)"
+done
+
+compose() { docker compose "$@"; }
+
+env_get() { sed -n "s/^$1=//p" .env | tail -n 1; }
+
+env_set() {
+  if grep -q "^$1=" .env; then
+    sed -i "s|^$1=.*|$1=$2|" .env
+  else
+    echo "$1=$2" >> .env
+  fi
+}
+
+require_tag() {
+  [[ -n ${1:-} ]] || die "version manquante (ex. : $0 $command 0.1.0)"
+  [[ $1 != latest ]] || die "donner une version précise, pas latest"
+}
+
+# Télécharge l'image et en extrait le compose.yaml de cette version (dans compose.yaml.new),
+# après avoir vérifié que ce script est assez récent pour lui.
+fetch_compose() {
+  local image=$1 tag=$2 required
+  docker pull "$image:$tag"
+  docker run --rm --entrypoint cat "$image:$tag" /rails/deploy/compose.yaml > compose.yaml.new
+  required=$(sed -n 's/^x-setup: *\([0-9]\+\).*/\1/p' compose.yaml.new)
+  if (( ${required:-1} > SETUP_VERSION )); then
+    rm -f compose.yaml.new
+    die "la version $tag demande setup $required (ce script : setup $SETUP_VERSION) : recopier back/setup"
+  fi
+}
+
+start() {
+  compose up -d --remove-orphans --wait --wait-timeout "$WAIT_TIMEOUT" || {
+    compose logs --tail 50 api >&2 || true
+    die "l'API n'est pas en bonne santé après ${WAIT_TIMEOUT} s (logs ci-dessus)"
+  }
+  echo "En service : $(env_get ASCACOU_API_IMAGE):$(env_get ASCACOU_API_TAG)"
+}
+
+cmd_install() {
+  local tag=${1:-} image=${ASCACOU_API_IMAGE:-$DEFAULT_IMAGE}
+  require_tag "$tag"
+  [[ ! -e compose.yaml ]] || die "compose.yaml existe déjà : déjà installé ($0 update <tag>)"
+  [[ ! -e .env ]] || die ".env existe déjà : il n'est jamais écrasé (secrets)"
+  [[ ! -e compose.override.yaml ]] || die "compose.override.yaml existe déjà : il n'est jamais écrasé"
+
+  fetch_compose "$image" "$tag"
+  (
+    umask 077
+    cat > .env <<EOF
+# Créé par setup install le $(date '+%F %T'). À sauvegarder ; ne jamais changer
+# SECRET_KEY_BASE (elle signe les JWT) ni le mot de passe (fixé à la création de la base).
+SECRET_KEY_BASE=$(openssl rand -hex 64)
+ASCACOU_API_DATABASE_PASSWORD=$(openssl rand -hex 32)
+ASCACOU_API_IMAGE=$image
+ASCACOU_API_TAG=$tag
+EOF
+  )
+  cat > compose.override.yaml <<'OVERRIDE'
+# Réglages propres à ce serveur. Créé par setup install, jamais modifié par setup :
+# c'est ici qu'on adapte le déploiement (compose.yaml est remplacé à chaque update).
+# docker compose le fusionne avec compose.yaml ; résultat : docker compose config.
+# Les listes s'ajoutent à celles de compose.yaml ; pour en remplacer une : !override.
+
+services:
+  api:
+    # Caddy, sur le routeur en amont, redirige vers ce port : il doit être joignable
+    # depuis le réseau local. Pour n'écouter que sur l'interface du réseau local :
+    #   - "<ip locale du serveur>:3000:3000"
+    ports:
+      - "3000:3000"
+
+    # Variables à changer (les autres sont dans compose.yaml) :
+    # environment:
+    #   CORS_ORIGINS: https://ascacou.lespyjamasrouges.fr,...
+    #   WEB_CONCURRENCY: 2
+
+OVERRIDE
+  mv compose.yaml.new compose.yaml
+  start
+}
+
+cmd_backup() {
+  [[ -e compose.yaml && -e .env ]] || die "rien d'installé ici ($0 install <tag>)"
+  local file
+  file="backups/$DATABASE-$(env_get ASCACOU_API_TAG)-$(date '+%Y%m%d-%H%M%S').dump"
+  mkdir -p backups
+  compose up -d --wait postgres
+  compose exec -T postgres pg_dump -U "$DB_USER" -Fc "$DATABASE" > "$file.tmp"
+  mv "$file.tmp" "$file"
+  echo "Sauvegarde : $file"
+}
+
+cmd_update() {
+  local tag=${1:-} image
+  require_tag "$tag"
+  [[ -e compose.yaml && -e .env ]] || die "rien d'installé ici ($0 install <tag>)"
+  image=$(env_get ASCACOU_API_IMAGE)
+
+  fetch_compose "$image" "$tag"
+  cmd_backup
+  mv compose.yaml.new compose.yaml
+  env_set ASCACOU_API_TAG "$tag"
+  start
+}
+
+cmd_status() {
+  [[ -e .env ]] || die "rien d'installé ici ($0 install <tag>)"
+  echo "Version : $(env_get ASCACOU_API_IMAGE):$(env_get ASCACOU_API_TAG) (setup $SETUP_VERSION)"
+  compose ps
+  compose logs --tail 20 api
+}
+
+# Liste les tags du registre (API Docker Registry v2), avec les identifiants enregistrés
+# par docker login sur cette machine.
+cmd_versions() {
+  local image current registry config auth tags tag
+  if [[ -e .env ]]; then
+    image=$(env_get ASCACOU_API_IMAGE)
+    current=$(env_get ASCACOU_API_TAG)
+  else
+    image=${ASCACOU_API_IMAGE:-$DEFAULT_IMAGE}
+    current=
+  fi
+  registry=${image%%/*}
+  config=${DOCKER_CONFIG:-$HOME/.docker}/config.json
+  auth=$(jq -r --arg registry "$registry" '.auths[$registry].auth // empty' "$config" 2> /dev/null || true)
+  [[ -n $auth ]] || die "pas d'identifiants pour $registry dans $config (docker login $registry)"
+
+  tags=$(curl -fsS -H "Authorization: Basic $auth" "https://$registry/v2/${image#*/}/tags/list") ||
+    die "liste des versions de $image inaccessible (erreur curl ci-dessus)"
+
+  jq -r '.tags[] | select(. != "latest")' <<< "$tags" | sort -V |
+    while read -r tag; do
+      if [[ $tag == "$current" ]]; then echo "* $tag   (en service)"; else echo "  $tag"; fi
+    done
+}
+
+command=${1:-}
+case $command in
+  install) cmd_install "${2:-}" ;;
+  update) cmd_update "${2:-}" ;;
+  backup) cmd_backup ;;
+  status) cmd_status ;;
+  versions) cmd_versions ;;
+  -h | --help | help) usage ;;
+  *) usage >&2; exit 1 ;;
+esac

@@ -1,0 +1,67 @@
+# Production de l'API : API (Puma, API + cable) et PostgreSQL. TLS par Caddy, devant.
+#
+# Installé et remplacé à chaque mise à jour par back/setup (extrait de l'image) : ne
+# pas le modifier sur le serveur.
+#   .env                   secrets et version en service (gérés par setup)
+#   compose.override.yaml  réglages du serveur : ports, variables, réseaux (créé par
+#                          setup install, jamais modifié ensuite ; fusionné par compose)
+
+name: "ascacou-prod"
+
+# Contrat avec back/setup : version minimale du script (voir doc/deploiement.md).
+x-setup: 1
+
+x-env: &default-env
+  TZ: Europe/Paris
+
+services:
+  api:
+    image: ${ASCACOU_API_IMAGE:?ASCACOU_API_IMAGE manquant}:${ASCACOU_API_TAG:?ASCACOU_API_TAG manquant}
+
+    # Pas de ports ici : ils sont dans compose.override.yaml (propres au serveur).
+
+    environment:
+      <<: *default-env
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?SECRET_KEY_BASE manquant}
+      DB_HOST: postgres
+      ASCACOU_API_DATABASE_PASSWORD: ${ASCACOU_API_DATABASE_PASSWORD:?ASCACOU_API_DATABASE_PASSWORD manquant}
+      BASE_URL: https://ascacou-api.lespyjamasrouges.fr
+      CORS_ORIGINS: https://ascacou.lespyjamasrouges.fr,https://dev-ascacou.lespyjamasrouges.fr,capacitor://localhost,https://localhost
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:3000/up"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+  postgres:
+    image: postgres:16.1
+
+    restart: unless-stopped
+
+    environment:
+      <<: *default-env
+      # Le rôle créé ici est propriétaire du serveur : db:prepare (au démarrage de
+      # l'API) peut créer les quatre bases.
+      POSTGRES_USER: ascacou_api
+      POSTGRES_PASSWORD: ${ASCACOU_API_DATABASE_PASSWORD:?ASCACOU_API_DATABASE_PASSWORD manquant}
+      POSTGRES_DB: ascacou_api_production
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ascacou_api -d ascacou_api_production"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:

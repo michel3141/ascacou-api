@@ -13,6 +13,3 @@ Thumbs.db
 
 # Fichiers d'éditeur
 *.swp
-
-# Secrets de prod-compose.yaml
-.env
