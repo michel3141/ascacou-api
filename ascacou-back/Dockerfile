@@ -9,31 +9,27 @@
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
 ARG RUBY_VERSION=4.0.5
-FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
+FROM docker.io/library/ruby:$RUBY_VERSION-alpine AS base
 
 # Rails app lives here
 WORKDIR /rails
 
 # Install base packages
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libjemalloc2 libvips postgresql-client && \
-    ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+RUN apk add --no-cache jemalloc libpq tzdata && \
+    ln -s /usr/lib/libjemalloc.so.2 /usr/local/lib/libjemalloc.so
 
 # Set production environment variables and enable jemalloc for reduced memory usage and latency.
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development" \
+    BUNDLE_WITHOUT="development:test" \
     LD_PRELOAD="/usr/local/lib/libjemalloc.so"
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 
 # Install packages needed to build gems
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libpq-dev libvips libyaml-dev pkg-config && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+RUN apk add --no-cache build-base git postgresql-dev yaml-dev pkgconf
 
 # Install application gems
 COPY vendor/* ./vendor/
@@ -58,8 +54,8 @@ RUN bundle exec bootsnap precompile -j 1 app/ lib/
 FROM base
 
 # Run and own only the runtime files as a non-root user for security
-RUN groupadd --system --gid 1000 rails && \
-    useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash
+RUN addgroup -S -g 1000 rails && \
+    adduser -S -D -u 1000 -G rails -h /home/rails -s /bin/sh rails
 USER 1000:1000
 
 # Copy built artifacts: gems, application

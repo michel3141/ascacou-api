@@ -1,7 +1,8 @@
 # Déploiement du back
 
-Conteneur Docker de l'app Rails (`ascacou-back/Dockerfile`) : Puma sert l'API et
-ActionCable (`/cable`). TLS (HTTPS / WSS) assuré par **Caddy** devant le conteneur.
+Conteneur Docker de l'app Rails (`ascacou-back/Dockerfile`, base `ruby:<version>-alpine`) :
+Puma sert l'API et ActionCable (`/cable`). TLS (HTTPS / WSS) assuré par **Caddy**
+devant le conteneur.
 Image : `docker.lespyjamasrouges.fr/ascacou/api` (tags `<version>` et `latest`),
 construite par `make build` et poussée par `make release` (voir `WORKFLOW.md`).
 

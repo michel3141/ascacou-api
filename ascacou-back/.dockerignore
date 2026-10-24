@@ -40,3 +40,9 @@
 # Relu et retouché après le build : ne doit pas faire partie de l'image
 # (le commit tagué doit rester identique à ce qui a été construit).
 /CHANGELOG.md
+
+# Inutiles à l'exécution : tests, add-ons, documentation, Vandal (dev seulement)
+/spec
+/add-ons
+/doc
+/public/api/v1/vandal
