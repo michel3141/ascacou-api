@@ -48,6 +48,19 @@ RSpec.describe RoomChannel, type: :channel do
     travel(RoomPresence::ABSENCE_DELAY + 1.second) { expect(RoomViewer.count_for(room)).to eq(0) }
   end
 
+  it "fait d'un spectateur qui rejoint le salon un joueur présent, dès son ping" do
+    waiting = create(:room)
+    stub_connection current_user: spectator
+    subscribe(code: waiting.code)
+    expect(RoomViewer.count_for(waiting)).to eq(1)
+
+    waiting.update!(guest: spectator)
+    expect { perform :ping }
+      .to have_broadcasted_to(waiting).with(type: "viewers", count: 0)
+      .and have_broadcasted_to(waiting).with(type: "presence", user_id: spectator.id, present: true)
+    expect(RoomPresence.present_user_ids(waiting)).to include(spectator.id)
+  end
+
   it "tient la présence à jour : abonnement, ping, départ" do
     stub_connection current_user: host
     expect { subscribe(code: room.code) }

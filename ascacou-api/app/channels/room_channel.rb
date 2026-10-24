@@ -40,8 +40,10 @@ class RoomChannel < ApplicationCable::Channel
 
   # Appelé par le client à intervalle régulier (30 s). Sans signe de vie depuis
   # RoomPresence::ABSENCE_DELAY, un joueur est absent : son adversaire peut
-  # réclamer la victoire.
+  # réclamer la victoire. Un spectateur qui a rejoint le salon depuis son abonnement
+  # devient joueur.
   def ping
+    promote_viewer if @viewer_key && @room.reload.player?(current_user)
     seen
   end
 
@@ -94,6 +96,13 @@ class RoomChannel < ApplicationCable::Channel
       RoomPresence.seen!(@room, current_user)
       self.class.broadcast_to(@room, presence_event(present: true))
     end
+  end
+
+  # Le spectateur ne l'est plus : il quitte les spectateurs, sa présence sera nommée.
+  def promote_viewer
+    RoomViewer.leave!(@viewer_key)
+    @viewer_key = nil
+    broadcast_viewers
   end
 
   def broadcast_viewers
