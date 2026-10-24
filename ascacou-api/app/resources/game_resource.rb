@@ -55,6 +55,11 @@ class GameResource < ApplicationResource
     @object.score
   end
 
+  attribute :realized_patterns, :array_of_integers,
+    description: "Motifs (0 à 15) présents sur le plateau ; une carte est reproduite si sa valeur y figure." do
+    @object.board.realized_patterns.sort
+  end
+
   attribute :blocked_coords, :array_of_strings,
     description: "Cases où aucune couleur n'est jouable (« pions verts »)." do
     @object.blocked_coords

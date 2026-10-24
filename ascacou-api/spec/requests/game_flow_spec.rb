@@ -117,7 +117,19 @@ RSpec.describe "API de jeu", type: :request do
       expect(attributes["current_player_id"]).to eq(first.id)
       expect(attributes["legal_moves"]["1x1"]).to eq(%w[black white])
       expect(attributes["score"]).to eq("host" => 0, "guest" => 0)
+      expect(attributes["realized_patterns"]).to eq([])
       expect(body.dig("data", "relationships", "room", "data", "id")).to eq(game.room.code)
+    end
+
+    it "exposent les motifs reproduits sur le plateau" do
+      [ [ first, "1x1", "black" ], [ second, "1x2", "black" ],
+        [ first, "2x1", "black" ], [ second, "2x2", "white" ] ].each.with_index(1) do |(user, coord, color), rank|
+        play(game, user, coord, color, rank:)
+        expect(response.status).to eq(201), response.body
+      end
+      jsonapi_get "/api/v1/games/#{game.id}"
+      # HG HD BG BD = noir noir noir blanc => 0b0001
+      expect(body.dig("data", "attributes", "realized_patterns")).to eq([ 1 ])
     end
 
     it "se jouent par POST /moves et refusent un coup hors tour avec un code" do
