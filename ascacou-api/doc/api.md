@@ -105,8 +105,10 @@ qui figure dans le lien de partage.
 Relations : `host`, `guest` (users), `games`.
 
 Liste (`GET /rooms`) : salons publics et salons en cours (pour les spectateurs). Un salon
-**privé en attente n'est jamais listé** ; on y accède par `GET /rooms/:code`.
-Filtres utiles : `filter[status]`, `filter[visibility]`.
+**privé en attente n'est listé que pour ses joueurs** ; les autres y accèdent par
+`GET /rooms/:code`. Filtres utiles : `filter[status]`, `filter[visibility]`, et
+`filter[player]=me` : les salons du joueur authentifié (« vos salons » ; vide sans jeton).
+Tri par défaut : du plus récent au plus ancien (`created_at` décroissant).
 
 | Action | Requête | Conditions |
 |---|---|---|

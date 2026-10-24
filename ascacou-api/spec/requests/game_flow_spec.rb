@@ -88,6 +88,24 @@ RSpec.describe "API de jeu", type: :request do
       expect(response.status).to eq(200)
     end
 
+    it "listent pour leurs joueurs leurs propres salons, privés en attente compris" do
+      private_code = open_room
+      public_code = open_room(visibility: "public")
+      other = create(:room, host: create(:user), visibility: "public")
+
+      jsonapi_get "/api/v1/rooms", params: { filter: { player: "me" } }, headers: auth(host)
+      expect(body.fetch("data").map { |room| room["id"] }).to contain_exactly(private_code, public_code)
+
+      jsonapi_get "/api/v1/rooms", params: { filter: { player: "me" } }, headers: auth(guest)
+      expect(body.fetch("data")).to be_empty
+
+      jsonapi_get "/api/v1/rooms", params: { filter: { player: "me" } }
+      expect(body.fetch("data")).to be_empty
+
+      jsonapi_get "/api/v1/rooms", headers: auth(guest)
+      expect(body.fetch("data").map { |room| room["id"] }).to contain_exactly(public_code, other.code)
+    end
+
     it "refusent qu'on y inscrive quelqu'un d'autre" do
       code = open_room
       jsonapi_patch "/api/v1/rooms/#{code}", { data: { type: "rooms", id: code,

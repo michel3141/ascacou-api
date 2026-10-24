@@ -645,7 +645,7 @@
             "name": "RoomResource",
             "type": "rooms",
             "graphql_entrypoint": "rooms",
-            "description": "Salon : deux joueurs, des réglages fixes et une suite de parties dont le score se cumule. L'id est le code du salon (lien de partage). Un salon privé en attente n'est pas listé. Rejoindre : PATCH { guest_id: <moi> }. Fermer : PATCH { status: \"closed\" }.",
+            "description": "Salon : deux joueurs, des réglages fixes et une suite de parties dont le score se cumule. L'id est le code du salon (lien de partage). Un salon privé en attente n'est pas listé, sauf pour ses joueurs. Rejoindre : PATCH { guest_id: <moi> }. Fermer : PATCH { status: \"closed\" }.",
             "attributes": {
                 "id": {
                     "type": "string",
@@ -818,6 +818,13 @@
                     "operators": [
                         "eq"
                     ]
+                },
+                "player": {
+                    "type": "string",
+                    "operators": [
+                        "eq"
+                    ],
+                    "single": true
                 }
             },
             "relationships": {
@@ -844,7 +851,12 @@
                     "count"
                 ]
             },
-            "public_id": "code"
+            "public_id": "code",
+            "default_sort": [
+                {
+                    "created_at": "desc"
+                }
+            ]
         },
         {
             "name": "UserResource",

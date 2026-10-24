@@ -13,6 +13,8 @@ class Room < ApplicationRecord
   enum :status, { waiting: "waiting", playing: "playing", closed: "closed" }, validate: true
   enum :deal_method, Ascacou::Deal::METHODS.index_with(&:to_s), prefix: :deal, validate: true
 
+  scope :with_player, ->(user) { where(host: user).or(where(guest: user)) }
+
   before_validation(on: :create) { self.code ||= Ascacou::RoomCode.generate { |code| !Room.exists?(code:) } }
   validates :code, presence: true, uniqueness: true
   validate :guest_is_not_host

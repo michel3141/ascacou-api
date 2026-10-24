@@ -4,7 +4,7 @@ class RoomResource < ApplicationResource
 
   self.description = "Salon : deux joueurs, des réglages fixes et une suite de parties dont le score " \
     "se cumule. L'id est le code du salon (lien de partage). Un salon privé en attente n'est pas " \
-    "listé. Rejoindre : PATCH { guest_id: <moi> }. Fermer : PATCH { status: \"closed\" }."
+    "listé, sauf pour ses joueurs. Rejoindre : PATCH { guest_id: <moi> }. Fermer : PATCH { status: \"closed\" }."
 
   belongs_to :host, resource: UserResource, description: "Joueur qui a ouvert le salon."
   belongs_to :guest, resource: UserResource, description: "Joueur qui a rejoint le salon."
@@ -30,6 +30,16 @@ class RoomResource < ApplicationResource
     @object.score.transform_values(&:to_f)
   end
 
+  # Du plus récent au plus ancien, sauf tri demandé.
+  default_sort [ { created_at: :desc } ]
+
+  filter :player, :string, single: true, only: [ :eq ],
+    description: "me : les salons du joueur authentifié (hôte ou invité), privés en attente compris." do
+    eq do |scope, value|
+      value == "me" && current_user ? scope.merge(Room.with_player(current_user)) : scope.none
+    end
+  end
+
   TRANSITIONS = {
     "guest_id" => ->(room, user, guest_id) {
       raise CommandRefused, :invalid_player unless guest_id.to_s == user.id.to_s
@@ -43,11 +53,13 @@ class RoomResource < ApplicationResource
     }
   }.freeze
 
-  # Un salon privé en attente n'est pas listé : on ne le rejoint que par son lien.
+  # Un salon privé en attente n'est pas listé : on ne le rejoint que par son lien. Ses
+  # joueurs, eux, le voient dans la liste (filter[player]=me : « vos salons »).
   def base_scope
     return Room.all unless current_action == :index
 
-    Room.visibility_public.or(Room.where.not(status: :waiting))
+    listed = Room.visibility_public.or(Room.where.not(status: :waiting))
+    current_user ? listed.or(Room.with_player(current_user)) : listed
   end
 
   def save(room, meta = nil)
