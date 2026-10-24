@@ -1,7 +1,7 @@
 # Les règles propres à l'app Rails sont dans ascacou-api/.gitignore.
 
 # Anciennes versions, gardées hors dépôt
-previous-version/
+previous-*/
 
 # Fichiers système
 .DS_Store
