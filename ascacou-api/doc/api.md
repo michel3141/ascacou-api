@@ -143,7 +143,7 @@ Relations : `room`, `first_player` (user), `moves`, `picks`. Filtre : `filter[ro
 
 | Action | Requête | Conditions |
 |---|---|---|
-| partie suivante | `POST /games` `{ room_id: <code> }` | la précédente est terminée |
+| partie suivante | `POST /games` `{ room_id: <code> }` | la précédente est terminée, l'adversaire est présent |
 | laisser la main | `PATCH` `{ first_player_id: <adversaire> }` | être premier joueur, aucun coup joué |
 | couleur d'ouverture | `PATCH` `{ opening_color }` | pion imposé, être le second joueur, avant le 1ᵉʳ coup |
 | demander l'annulation | `PATCH` `{ takeback_requested: true }` | avoir joué le dernier coup |
@@ -202,6 +202,7 @@ Action : `POST /picks`.
 | `already_in_room` | l'hôte ne peut pas rejoindre son propre salon |
 | `room_not_playing`, `room_closed` | salon pas en jeu, ou fermé |
 | `game_in_progress` | partie suivante demandée avant la fin de la partie |
+| `opponent_absent` | partie suivante demandée alors que l'adversaire est absent (sans signe de vie depuis 2 minutes) |
 | `invalid_player`, `invalid_status` | valeur de transition non permise (inscrire un autre joueur, statut autre que `closed`) |
 | **Parties** | |
 | `not_playing`, `game_finished` | partie pas en phase de jeu, ou terminée |

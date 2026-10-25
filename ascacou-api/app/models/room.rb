@@ -67,11 +67,14 @@ class Room < ApplicationRecord
     self
   end
 
-  def next_game!(user, random: Random)
+  # L'adversaire doit être là : sinon on pourrait lancer une partie et réclamer aussitôt
+  # la victoire (même règle d'absence que la réclamation).
+  def next_game!(user, random: Random, now: Time.current)
     with_lock do
       refuse!(:not_a_player) unless player?(user)
       refuse!(:room_not_playing) unless playing?
       refuse!(:game_in_progress) unless current_game&.finished?
+      refuse!(:opponent_absent) if RoomPresence.absent?(self, opponent_of(user), now:)
 
       start_game!(random:)
     end

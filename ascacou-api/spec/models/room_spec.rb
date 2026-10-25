@@ -42,7 +42,10 @@ RSpec.describe Room do
   end
 
   describe "#next_game!" do
-    before { room.join!(guest, random: Random.new(1)) }
+    before do
+      room.join!(guest, random: Random.new(1))
+      [ host, guest ].each { |player| RoomPresence.seen!(room, player) }
+    end
 
     it "refuse tant que la partie est en cours" do
       expect { room.next_game!(host) }.to raise_error(CommandRefused, "game_in_progress")
@@ -65,6 +68,13 @@ RSpec.describe Room do
       expect(third.host_hand).to eq(first.host_hand)
     end
 
+    it "refuse si l'adversaire est absent (pas de victoire réclamée à volonté)" do
+      finish(room.current_game)
+      later = Time.current + RoomPresence::ABSENCE_DELAY + 1.second
+      RoomPresence.seen!(room, host, at: later)
+      expect { room.next_game!(host, now: later) }.to raise_error(CommandRefused, "opponent_absent")
+    end
+
     it "refuse un spectateur" do
       finish(room.current_game)
       expect { room.next_game!(create(:user)) }.to raise_error(CommandRefused, "not_a_player")
@@ -74,6 +84,7 @@ RSpec.describe Room do
   describe "#score" do
     it "cumule 1 par victoire et ½ par nulle" do
       room.join!(guest)
+      [ host, guest ].each { |player| RoomPresence.seen!(room, player) }
       finish(room.current_game, winner: host)
       room.next_game!(host)
       finish(room.current_game, winner: host)

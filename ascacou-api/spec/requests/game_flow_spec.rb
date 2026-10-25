@@ -203,8 +203,13 @@ RSpec.describe "API de jeu", type: :request do
       expect(game.reload.takeback_requested).to be(false)
     end
 
-    it "enchaînent la partie suivante par POST /games" do
+    it "enchaînent la partie suivante par POST /games, adversaire présent" do
       patch_game(game, first, result: game.room.role_of(second))
+      jsonapi_post "/api/v1/games", { data: { type: "games", attributes: { room_id: game.room.code } } },
+                   headers: auth(first)
+      expect(error_codes).to eq([ "opponent_absent" ])
+
+      RoomPresence.seen!(game.room, second)
       jsonapi_post "/api/v1/games", { data: { type: "games", attributes: { room_id: game.room.code } } },
                    headers: auth(first)
       expect(response.status).to eq(201), response.body
