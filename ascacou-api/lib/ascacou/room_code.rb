@@ -1,26 +1,30 @@
-# Mots des codes de salon, repris de la première version de l'app.
-# Chaque code est un mot de chaque liste ; la forme « à plat » (sans accents)
-# sert d'identifiant dans les URL.
+# Mots des codes de salon : un mot de nature, un animal, un mot du ciel ou des sciences.
+# Mots courants, au singulier, sans piège d'orthographe à la dictée.
+# La forme « à plat » (sans accents) sert d'identifiant dans les URL.
 module Ascacou
   module RoomCode
     WORDS = [
+      # Nature
       %w[
-        aurore nébuleuse dorade saturne comète flèche vénus télescope licorne paon cassiopée vierge
-        chien sculpteur étoile arbre triangle bélier pégase loup écu orion éclaircie ourse fleuve
-        colline dauphin couronne brouillard nuage fourneau centaure lièvre grêle éridan poissons
-        balance lac chevelure horloge terre ophiuchus octant lynx oiseau
+        arbre forêt rivière montagne rocher falaise prairie savane volcan glacier océan plage dune
+        vallée sentier jardin verger source cascade clairière orage nuage neige pluie brume tempête
+        givre rose aurore oasis corail lagon banquise galet sable cristal bambou cèdre érable olivier
+        sapin roseau fougère tulipe lavande jasmin muguet trèfle pivoine mimosa
       ].freeze,
+      # Animaux
       %w[
-        halo étang soleil océan colombe uranus jupiter peintre giboulées compas cheval rocher
-        château sagittaire plateau autel carène tonnerre forêt poisson mars serpent grue toucan
-        baleine neige voiles capricorne satellite falaise titan coupe caillou constellation lune mer
-        croix microscope sextant renard plante mercure cygne tempête galaxie
+        renard loup ours lion tigre lama guépard zèbre chèvre castor lapin biche sanglier loutre
+        baleine dauphin requin tortue pieuvre méduse crabe saumon truite hibou aigle faucon corbeau
+        colombe pélican toucan cigogne héron fourmi criquet escargot lézard crapaud serpent koala
+        panda taupe bison morse otarie pingouin autruche antilope jaguar puma hermine
       ].freeze,
+      # Ciel et sciences
       %w[
-        règle corbeau phénix pluton andromède girafe verseau massif sommet eau hercule indien éclair
-        dôme astéroïde persée pluie taureau table buisson neptune scorpion caméléon vent poupe lyre
-        lion bouvier mouche machine pic réticule volcan lézard dragon gémeaux mirage burin rivière
-        cocher phobos boussole hydre montagne cancer
+        étoile comète planète galaxie lune soleil orbite fusée astre météore nébuleuse éclipse
+        horizon compas télescope prisme aimant atome laser radar signal spirale cercle triangle
+        losange électron neutron molécule carbone hélium néon mercure vénus mars jupiter saturne
+        neptune pluton orion solstice horloge sablier pendule levier globe loupe microscope cosmos
+        sonde robot
       ].freeze
     ].freeze
 
@@ -40,13 +44,13 @@ module Ascacou
       generate(size: size + 1, random:) { |code| !block_given? || yield(code) }
     end
 
-    # Forme saisie ou dictée (« Aurore Halo règle ») vers la forme stockée.
+    # Forme saisie ou dictée (« Forêt Renard comète ») vers la forme stockée.
     def normalize(text)
       words = flatten_text(text.to_s).split(/[^a-z]+/).reject(&:empty?)
       words.join(SEPARATOR) if words.size >= WORDS.size
     end
 
-    # Forme affichée, avec les accents : « aurore · halo · règle ».
+    # Forme affichée, avec les accents : « forêt · renard · comète ».
     def label(code)
       code.to_s.split(SEPARATOR).each_with_index.map do |word, i|
         WORDS[i % WORDS.size].find { |candidate| flatten(candidate) == word } || word
