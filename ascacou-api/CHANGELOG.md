@@ -1,3 +1,13 @@
+# 0.2.0
+
+2026-10-25 fix: mots des codes de salon plus courants, un thème par mot (nature · animal · ciel)
+2026-10-25 fix: pas de partie suivante sans l'adversaire (victoire réclamée à volonté)
+2026-10-25 feat: filter[player]=me et tri par défaut des salons (du plus récent au plus ancien)
+2026-10-25 feat: realized_squares, motifs réalisés et leur position
+2026-10-25 feat: last_move, dernier pion posé
+2026-10-24 fix: un spectateur devenu joueur est présent dès son ping
+2026-10-24 docs: README d'accueil
+
 # 0.1.0
 
 2026-10-24 refactor: ascacou-back devient ascacou-api (dossier, module, bases, compose)
