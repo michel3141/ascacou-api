@@ -19,6 +19,10 @@ require "action_cable/engine"
 Bundler.require(*Rails.groups)
 
 module AscacouApi
+  # Version du logiciel (fichier VERSION, écrit par la release), pas celle du contrat
+  # de l'API (/api/v1) : voir doc/api.md, « Versions ».
+  VERSION = File.read(File.expand_path("../VERSION", __dir__)).strip
+
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.1
