@@ -164,7 +164,8 @@ Relations : `room`, `first_player` (user), `moves`, `picks`. Filtre : `filter[ro
 | Action | Requête | Conditions |
 |---|---|---|
 | partie suivante | `POST /games` `{ room_id: <code> }` | la précédente est terminée, l'adversaire est présent |
-| laisser la main | `PATCH` `{ first_player_id: <adversaire> }` | être premier joueur, aucun coup joué |
+| laisser la main | `PATCH` `{ first_player_id: <adversaire> }` | être premier joueur, aucun coup joué, pas de pioche |
+| laisser piocher en premier | `PATCH` `{ first_player_id: <soi> }` | pioche, aucune carte piochée, devoir piocher : on commencera la partie |
 | couleur d'ouverture | `PATCH` `{ opening_color }` | pion imposé, être le second joueur, avant le 1ᵉʳ coup |
 | demander l'annulation | `PATCH` `{ takeback_requested: true }` | avoir joué le dernier coup |
 | refuser l'annulation | `PATCH` `{ takeback_requested: false }` | demande en cours, être l'adversaire |
@@ -196,7 +197,8 @@ La partie se termine d'elle-même quand plus aucun nouveau motif ne peut être r
 
 Distribution `draft` : à tour de rôle, en commençant par le joueur qui **ne** commence
 **pas** la partie, chacun place une carte libre dans l'un des deux jeux, jusqu'à 8 + 8.
-Pas d'annulation.
+Pas d'annulation. Avant la première carte, celui qui doit piocher peut laisser l'autre piocher en
+premier (`PATCH /games/:id { first_player_id: <soi> }`) : il commencera alors la partie.
 
 | Attribut | | |
 |---|---|---|
@@ -226,7 +228,7 @@ Action : `POST /picks`.
 | `invalid_player`, `invalid_status` | valeur de transition non permise (inscrire un autre joueur, statut autre que `closed`) |
 | **Parties** | |
 | `not_playing`, `game_finished` | partie pas en phase de jeu, ou terminée |
-| `game_started`, `not_first_player` | laisser la main après le 1ᵉʳ coup, ou sans être premier joueur |
+| `game_started`, `not_first_player` | laisser la main après le 1ᵉʳ coup ou la 1ʳᵉ carte piochée (et après une pioche), ou sans être premier joueur |
 | `awaiting_opening_color`, `not_awaiting_opening_color` | couleur d'ouverture à choisir d'abord, ou déjà choisie |
 | `invalid_result` | `result` autre que `host` / `guest` |
 | `opponent_present` | victoire réclamée alors que l'adversaire est là |

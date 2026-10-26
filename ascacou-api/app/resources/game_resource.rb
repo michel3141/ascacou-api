@@ -17,7 +17,8 @@ class GameResource < ApplicationResource
   attribute :host_hand, :array_of_integers, description: "Cartes-motifs (0 à 15) de l'hôte."
   attribute :guest_hand, :array_of_integers, description: "Cartes-motifs (0 à 15) de l'invité."
   attribute :first_player_id, :integer, writable: :updating?,
-    description: "Joueur qui commence. PATCH avec l'id de l'adversaire : laisser la main (avant le 1er coup)."
+    description: "Joueur qui commence. PATCH avec l'id de l'adversaire : laisser la main (avant le 1er coup) ; " \
+                 "en pioche, avec son propre id : laisser piocher l'adversaire en premier (avant la 1re carte)."
   attribute :opening_color, :string, writable: :updating?,
     description: "Pion imposé : couleur du premier pion, choisie par le second joueur (black ou white)."
   attribute :takeback_requested, :boolean, writable: :updating?,

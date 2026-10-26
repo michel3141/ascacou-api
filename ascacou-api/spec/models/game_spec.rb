@@ -168,6 +168,27 @@ RSpec.describe Game do
       expect(game.picks.size).to eq(16)
       expect(game.current_player).to eq(first)
     end
+
+    it "laisse piocher l'adversaire en premier avant la première carte, puis plus" do
+      expect { game.pass_hand!(first) }.to raise_error(CommandRefused, "not_your_turn")
+      expect { game.pass_hand!(second, to: first.id) }.to raise_error(CommandRefused, "invalid_player")
+      game.pass_hand!(second, to: second.id)
+      # Celui qui laisse piocher commencera la partie ; l'autre pioche en premier.
+      expect(game.first_player).to eq(second)
+      expect(game.current_player).to eq(first)
+      game.pass_hand!(first) # et ainsi de suite, tant que personne n'a pioché
+      expect(game.current_player).to eq(second)
+
+      game.pick!(second, card: 0, hand: "host")
+      expect { game.pass_hand!(first) }.to raise_error(CommandRefused, "game_started")
+    end
+
+    it "ne laisse plus la main au premier coup après la pioche" do
+      players = [ second, first ].cycle
+      (0..7).each { |card| game.pick!(players.next, card:, hand: "host") }
+      (8..15).each { |card| game.pick!(players.next, card:, hand: "guest") }
+      expect { game.pass_hand!(first) }.to raise_error(CommandRefused, "game_started")
+    end
   end
 
   describe "fin anticipée" do

@@ -110,17 +110,31 @@ class Game < ApplicationRecord
     end
   end
 
-  # « Laisser la main » avant le premier coup. to : le joueur qui reçoit la main,
-  # quand la demande l'exprime (PATCH first_player_id).
+  # « Laisser la main » : le joueur dont c'est le tour passe son tour, avant le premier
+  # geste de la partie. to : le futur premier joueur, quand la demande l'exprime
+  # (PATCH first_player_id).
+  # - Pioche, avant la première carte : celui qui doit piocher laisse l'autre piocher en
+  #   premier, et commencera donc la partie (to = lui-même). Après la pioche, la main
+  #   ne se laisse plus : la compensation est faite.
+  # - Autres distributions, avant le premier coup : le premier joueur laisse commencer
+  #   l'adversaire (to = l'adversaire).
   def pass_hand!(user, to: nil)
     command(user) do
-      refuse!(:not_playing) unless playing?
-      refuse!(:game_started) if moves.any?
-      refuse!(:not_first_player) unless first_player == user
-      refuse!(:invalid_player) if to && to.to_s != second_player.id.to_s
+      if drafting?
+        refuse!(:game_started) if picks.any?
+        refuse!(:not_your_turn) unless current_player == user
+        refuse!(:invalid_player) if to && to.to_s != user.id.to_s
 
-      self.first_player = second_player
-      self.opening_color = nil
+        self.first_player = user
+      else
+        refuse!(:not_playing) unless playing?
+        refuse!(:game_started) if moves.any? || picks.any?
+        refuse!(:not_first_player) unless first_player == user
+        refuse!(:invalid_player) if to && to.to_s != second_player.id.to_s
+
+        self.first_player = second_player
+        self.opening_color = nil
+      end
     end
   end
 

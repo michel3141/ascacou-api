@@ -46,7 +46,7 @@
                     "type": "integer",
                     "readable": true,
                     "writable": "guarded",
-                    "description": "Joueur qui commence. PATCH avec l'id de l'adversaire : laisser la main (avant le 1er coup)."
+                    "description": "Joueur qui commence. PATCH avec l'id de l'adversaire : laisser la main (avant le 1er coup) ; en pioche, avec son propre id : laisser piocher l'adversaire en premier (avant la 1re carte)."
                 },
                 "opening_color": {
                     "type": "string",
