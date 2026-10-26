@@ -18,6 +18,26 @@ API JSON:API servie par Graphiti, sous `/api/v1`, consommée par le front avec s
   La spec `spec/schema_spec.rb` échoue si l'API courante n'est plus compatible avec lui
   (attribut supprimé, type changé…) : c'est le signal d'un commit `feat!`.
 
+## Versions
+
+Deux numéros, qui ne disent pas la même chose :
+
+- **`/api/v1`, le contrat.** Les ressources, attributs et transitions décrits par le
+  schéma. Il ne change de numéro que sur une rupture que les clients déjà installés ne
+  peuvent pas absorber.
+- **`X-Api-Version`, le logiciel.** En-tête de la route de santé `/up` (`0.3.0`…), lu
+  dans `VERSION` : quelle image tourne. Il change à chaque release, correctifs internes
+  compris, et sert au diagnostic (`curl -sI https://<api>/up`), pas à la compatibilité.
+
+Règle des ruptures (`feat!`, signalées par `spec/schema_spec.rb`) :
+
+- **En 0.x** (avant la première app publiée sur les stores) : on peut casser `/api/v1`
+  sur place ; le web se redéploie, les apps de test se réinstallent.
+- **À partir de 1.0.0** (première publication sur les stores) : une app installée
+  continue d'appeler l'API pendant des mois. Une rupture ouvre `/api/v2`, et `/api/v1`
+  reste servi tant que des apps installées l'utilisent. Les ajouts compatibles
+  (nouvel attribut, nouvelle ressource) restent dans la version en cours.
+
 ## Principes
 
 **Le serveur fait autorité.** Les règles du jeu ne vivent qu'au serveur

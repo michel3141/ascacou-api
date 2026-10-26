@@ -117,3 +117,6 @@ Le CHANGELOG reprend `feat`, `feat!`, `fix`, `perf`, `refactor` et `docs`.
 **Changement cassant de l'API** : la spec `spec/schema_spec.rb` échoue quand l'API
 n'est plus compatible avec `doc/schema.json`. Si c'est voulu : commit en `feat!`,
 puis `make schema` pour mettre la référence à jour.
+En 0.x, la rupture se fait sur place dans `/api/v1` ; à partir de 1.0.0 (première app
+sur les stores), elle ouvre `/api/v2` et `/api/v1` reste servi : voir
+`ascacou-api/doc/api.md`, « Versions ».
