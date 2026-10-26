@@ -85,6 +85,17 @@ Toutes se lancent depuis `back/`.
 En cas de doute sur l'étape en cours : le fichier `.release-state` contient
 `prepared`, `built <commit construit>` ou `released`.
 
+## Version et CHANGELOG : seulement par la release
+
+Entre un build et la release, la version et le CHANGELOG sont modifiés sans être
+commités : ils appartiennent au commit `chore(release)`. Deux protections :
+
+- le hook `.githooks/commit-msg`, activé par `make prepare-release`
+  (`git config core.hooksPath .githooks`), refuse un commit qui les embarque
+  (`git commit -a`…) sans être un `chore(release)` ; `--no-verify` pour passer outre ;
+- `bin/bump guard`, lancé par `prepare-release` et `build`, rattrape un tel commit
+  (hook non installé, `--no-verify`) et le nomme.
+
 ## Types de commits
 
 Format : `<type>: <description en français>` (scope optionnel : `feat(api): …`).

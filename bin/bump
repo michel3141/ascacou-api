@@ -22,13 +22,18 @@ Usage: $(basename "$0") <commande>
   L | write-changelog
                   écrit cette entrée en tête de CHANGELOG.md ; remplace le
                   brouillon (entrée d'une version pas encore taguée)
+  g | guard       vérifie qu'aucun commit depuis le dernier tag n'a embarqué la
+                  version ou le CHANGELOG (ils n'entrent que par chore(release))
+  s | check-staged <fichier-message>
+                  hook commit-msg : refuse un commit qui change la version ou
+                  le CHANGELOG sans être un commit chore(release)
 
 Fichiers : \$APP_DIR/VERSION et \$APP_DIR/CHANGELOG.md (APP_DIR=${APP_DIR:-ascacou-api}).
 EOF
   exit 1
 }
 
-[[ $# -eq 1 ]] || usage
+[[ $# -eq 1 || ( $# -eq 2 && "$1" =~ ^(s|check-staged)$ ) ]] || usage
 
 ROOT=$(git rev-parse --show-toplevel)
 cd "$ROOT"
@@ -48,6 +53,11 @@ version() {
   v=$(tr -d '[:space:]' < "$VERSION_FILE")
   [[ "$v" =~ $SEMVER ]] || { echo "Version invalide dans $VERSION_FILE : '$v'" >&2; exit 1; }
   echo "$v"
+}
+
+# Version d'un état git : HEAD, :0 (index)… ; vide si le fichier n'y est pas.
+version_at() {
+  git show "$1:$VERSION_FILE" 2>/dev/null | tr -d '[:space:]' || true
 }
 
 last_tag() {
@@ -128,6 +138,39 @@ case "$1" in
     fi
     ;;
   l|changelog) changelog ;;
+  g|guard)
+    # Entre deux releases, la version commitée reste celle du dernier tag et le
+    # CHANGELOG n'est touché par aucun commit (build les modifie sans les commiter).
+    tag=$(last_tag)
+    published=${tag#v}; published=${published:-0.0.0}
+    committed=$(version_at HEAD)
+    touched=$(git log --format='%h %s' "$(commit_range)" -- "$CHANGELOG")
+    if [[ "$committed" != "$published" || -n "$touched" ]]; then
+      echo "Version ou CHANGELOG commités hors release depuis ${tag:-le début} :" >&2
+      # Seuls les commits qui changent la version ou touchent le CHANGELOG.
+      for c in $(git rev-list --reverse "$(commit_range)" -- "$VERSION_FILE" "$CHANGELOG"); do
+        git rev-parse -q --verify "$c^" >/dev/null || continue  # premier commit
+        prev=$(version_at "$c^")
+        if [[ -n "$prev" && "$(version_at "$c")" != "$prev" ]] ||  # pas la création
+           ! git diff --quiet "$c^" "$c" -- "$CHANGELOG" 2>/dev/null; then
+          git log -1 --format='  %h %s' "$c" >&2
+        fi
+      done
+      echo "Défaire ce commit (git reset HEAD~1…) et le refaire sans $VERSION_FILE ni $CHANGELOG." >&2
+      exit 1
+    fi
+    ;;
+  s|check-staged)
+    [[ "$(head -1 "$2")" == chore\(release\):* ]] && exit 0
+    staged_version=$(version_at :0)
+    if [[ "$staged_version" != "$(version_at HEAD)" ]] ||
+       ! git diff --cached --quiet -- "$CHANGELOG"; then
+      echo "Ce commit change la version ou $CHANGELOG : réservé au commit chore(release)." >&2
+      echo "  git restore --staged $VERSION_FILE $CHANGELOG   puis recommencer le commit" >&2
+      echo "  (git commit --no-verify pour passer outre)" >&2
+      exit 1
+    fi
+    ;;
   L|write-changelog)
     # Brouillon : l'entrée du haut, si sa version dépasse la dernière publiée.
     # Elle est régénérée à chaque appel (titre et commits à jour).

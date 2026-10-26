@@ -65,7 +65,11 @@ check-changelog:
 	@grep -q "^# $(version)$$" $(APP)/CHANGELOG.md || { \
 		echo "Pas d'entrée $(version) dans $(APP)/CHANGELOG.md"; exit 1; }
 
+# Le hook commit-msg réserve version et CHANGELOG au commit chore(release) ;
+# bin/bump guard rattrape un commit qui les a embarqués malgré tout.
 prepare-release: check-clean
+	git config core.hooksPath .githooks
+	bin/bump guard
 	@echo "Prochaine version : $$(bin/bump peek)"
 	$(MAKE) --no-print-directory check
 	@echo prepared > $(STATE)
@@ -76,6 +80,7 @@ prepare-release: check-clean
 build: check-release-files
 	@grep -qE '^(prepared|built)' $(STATE) 2>/dev/null || { \
 		echo "Lancer d'abord make prepare-release"; exit 1; }
+	bin/bump guard
 	$(MAKE) --no-print-directory check
 	bin/bump next
 	bin/bump write-changelog

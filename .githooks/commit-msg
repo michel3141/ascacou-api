@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Version et CHANGELOG n'entrent que par le commit chore(release) (voir bin/bump).
+# Activé par make prepare-release (git config core.hooksPath .githooks).
+exec bin/bump check-staged "$1"
