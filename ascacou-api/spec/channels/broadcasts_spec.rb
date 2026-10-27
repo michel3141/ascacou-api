@@ -11,6 +11,16 @@ RSpec.describe "Annonces sur le cable" do
       .with(hash_including(type: "game", game: hash_including(id: game.id, version: game.lock_version + 1)))
   end
 
+  it "annonce le salon quand une partie se termine (son score change)" do
+    expect { game.resign!(game.first_player) }
+      .to have_broadcasted_to(room).from_channel(RoomChannel).with(hash_including(type: "room"))
+  end
+
+  it "n'annonce pas le salon pour un coup qui ne termine pas la partie" do
+    expect { game.play!(game.first_player, coord: "3x3", color: "black") }
+      .not_to have_broadcasted_to(room).from_channel(RoomChannel).with(hash_including(type: "room"))
+  end
+
   it "n'annonce rien quand une commande est refusée" do
     refused_move = lambda do
       game.play!(game.second_player, coord: "3x3", color: "black")

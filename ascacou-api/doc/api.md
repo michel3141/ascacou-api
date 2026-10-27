@@ -268,7 +268,7 @@ autre abonné, identifié ou non, est un spectateur : compté, pas nommé. Messa
 | `type` | Quand | Contenu |
 |---|---|---|
 | `sync` | à chaque abonnement, donc à chaque (re)connexion | `room` (id, status, guest_id, games_count), `game` (id, number, status, `version`), `present` (ids des joueurs présents), `viewers` (nombre de spectateurs) |
-| `room` | le salon a changé (invité, statut, partie suivante) | `room` |
+| `room` | le salon a changé (invité, statut, partie suivante, score : une partie vient de se terminer) | `room` |
 | `game` | la partie a changé (coup, pioche, annulation, fin…) | `game`, dont `version` = `lock_version` |
 | `presence` | signe de vie ou départ d'un joueur | `user_id`, `present` |
 | `viewers` | arrivée ou départ d'un spectateur | `count` |

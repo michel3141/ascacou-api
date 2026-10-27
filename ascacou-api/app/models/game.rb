@@ -19,8 +19,12 @@ class Game < ApplicationRecord
   validates :number, numericality: { only_integer: true, greater_than: 0 }
 
   # Toute commande sauvegarde la partie (lock_version augmente) : une seule annonce
-  # suffit, coups et pioches compris.
-  after_commit { RoomChannel.game_changed(self) }
+  # suffit, coups et pioches compris. Une partie qui se termine change le score du
+  # salon (calculé, sans sauvegarde du salon) : le salon est annoncé aussi.
+  after_commit do
+    RoomChannel.game_changed(self)
+    RoomChannel.room_changed(room) if saved_change_to_status?(to: "finished")
+  end
   validates :opening_color, inclusion: { in: COLORS }, allow_nil: true
   validate :first_player_is_a_player
 
