@@ -104,7 +104,8 @@ changelog() {
   fi
   echo "# $v"
   echo
-  # Séparateurs ASCII : enregistrement \x1e, champ \x1f.
+  # Séparateurs ASCII : enregistrement \x1e, champ \x1f. Une ligne vide du message
+  # reste vide dans le CHANGELOG (pas d'espaces en fin de ligne).
   git log "$(commit_range)" --date=format:%Y-%m-%d --format='%x1e%ad%x1f%s%x1f%b' |
     awk -v RS='\036' -F '\037' -v listed="$LISTED" '
       NF >= 2 && $2 ~ listed {
@@ -113,8 +114,9 @@ changelog() {
         sub(/\n+$/, "", body)
         n = split(body, lines, "\n")
         for (i = 1; i <= n; i++)
-          if (lines[i] !~ /^(Co-Authored-By|Claude-Session):/)
-            printf "           %s\n", lines[i]
+          if (lines[i] ~ /^(Co-Authored-By|Claude-Session):/) continue
+          else if (lines[i] == "") print ""
+          else printf "           %s\n", lines[i]
       }'
   echo
 }
