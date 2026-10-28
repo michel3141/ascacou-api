@@ -1,3 +1,27 @@
+# 0.3.0
+
+2026-10-28 feat: ressource a_propos (singleton) à la place de l'en-tête X-Api-Version
+           GET /api/v1/a_propos, sans jeton ni id (findSingle côté spraypaint) : version du
+           logiciel, droits sur le jeu et sur l'application, site du jeu, parties en cours.
+           /up redevient la route de santé de Rails, sans en-tête. Repli dans l'initialiseur
+           Graphiti : sans lui, l'endpoint singleton manquerait au schéma.
+           
+2026-10-27 fix: le salon est annoncé quand une partie se termine (score en direct)
+           Le score du salon se calcule sur ses parties terminées : la fin d'une partie ne
+           sauvegardait pas le salon, seule la partie était annoncée et les clients gardaient
+           l'ancien score. Les clients existants rechargent déjà le salon sur cette annonce.
+           
+2026-10-26 feat: en pioche, laisser piocher l'adversaire en premier ; plus de main laissée après une pioche
+2026-10-26 docs: versions de l'API (contrat /api/v1, logiciel a_propos.version) et règle des ruptures
+           En 0.x, rupture sur place dans /api/v1 ; à partir de 1.0.0 (première app sur
+           les stores), une rupture ouvre /api/v2 et /api/v1 reste servi.
+           
+2026-10-26 docs: licence (tous droits réservés) et conditions de contribution
+           Code publié pour consultation ; contributions sur autorisation écrite, sous
+           licence perpétuelle et irrévocable au profit de l'auteur (CONTRIBUTING.md).
+           Le jeu et sa charte graphique restent à leurs auteurs.
+           
+
 # 0.2.0
 
 2026-10-25 fix: mots des codes de salon plus courants, un thème par mot (nature · animal · ciel)
