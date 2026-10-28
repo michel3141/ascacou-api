@@ -25,9 +25,10 @@ Deux numéros, qui ne disent pas la même chose :
 - **`/api/v1`, le contrat.** Les ressources, attributs et transitions décrits par le
   schéma. Il ne change de numéro que sur une rupture que les clients déjà installés ne
   peuvent pas absorber.
-- **`X-Api-Version`, le logiciel.** En-tête de la route de santé `/up` (`0.3.0`…), lu
-  dans `VERSION` : quelle image tourne. Il change à chaque release, correctifs internes
-  compris, et sert au diagnostic (`curl -sI https://<api>/up`), pas à la compatibilité.
+- **`version` de `a_propos`, le logiciel.** Attribut de la ressource singleton
+  `GET /api/v1/a_propos` (`0.3.0`…), lu dans `VERSION` : quelle image tourne. Il change
+  à chaque release, correctifs internes compris, et sert au diagnostic
+  (`curl -s https://<api>/api/v1/a_propos`), pas à la compatibilité.
 
 Règle des ruptures (`feat!`, signalées par `spec/schema_spec.rb`) :
 
@@ -100,6 +101,20 @@ Notation : **L** lecture, **C** modifiable à la création, **M** modifiable en 
 | `name` | L C M | 30 caractères max. Un joueur ne modifie que lui-même (`forbidden`). |
 
 Routes : `GET /users/:id`, `POST /users`, `PATCH /users/:id`.
+
+### `a_propos` — singleton
+
+Lecture seule, sans jeton ni id (`findSingle()` côté spraypaint). Id : `ascacou`.
+
+| Attribut | | |
+|---|---|---|
+| `version` | L | Version du logiciel (voir Versions). |
+| `game_rights` | L | Droits sur le jeu (Marc Buonomo). |
+| `code_rights` | L | Droits sur l'application (michel3141). |
+| `game_website` | L | Site du jeu. |
+| `games_playing` | L | Parties en cours. |
+
+Route : `GET /a_propos`.
 
 ### `rooms` — salons
 

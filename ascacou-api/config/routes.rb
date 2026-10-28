@@ -5,6 +5,7 @@ Rails.application.routes.draw do
     resources :games, only: %i[index show create update]
     resources :moves, only: %i[index show create destroy]
     resources :picks, only: %i[index show create]
+    resource :a_propos, only: :show, controller: "a_propos"
     # Explorateur et schéma en direct : développement seulement.
     mount VandalUi::Engine, at: "/vandal" if Rails.env.development?
     # your routes go here
@@ -13,8 +14,7 @@ Rails.application.routes.draw do
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
-  # En-tête X-Api-Version : la version du logiciel (HealthController).
-  get "up" => "health#show", as: :rails_health_check
+  get "up" => "rails/health#show", as: :rails_health_check
 
   # Defines the root path route ("/")
   # root "posts#index"

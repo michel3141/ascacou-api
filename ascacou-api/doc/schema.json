@@ -1,6 +1,59 @@
 {
     "resources": [
         {
+            "name": "AProposResource",
+            "type": "a_propos",
+            "graphql_entrypoint": "aPropos",
+            "description": "À propos (singleton, GET /a_propos sans id) : version du logiciel, droits, chiffres du moment.",
+            "attributes": {
+                "id": {
+                    "type": "string",
+                    "readable": true,
+                    "writable": false,
+                    "description": null
+                },
+                "version": {
+                    "type": "string",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Version du logiciel (0.3.0…) : quelle image tourne. Diagnostic, pas compatibilité."
+                },
+                "game_rights": {
+                    "type": "string",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Droits sur le jeu."
+                },
+                "code_rights": {
+                    "type": "string",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Droits sur l'application."
+                },
+                "game_website": {
+                    "type": "string",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Site du jeu."
+                },
+                "games_playing": {
+                    "type": "integer",
+                    "readable": true,
+                    "writable": false,
+                    "description": "Parties en cours."
+                }
+            },
+            "extra_attributes": {},
+            "sorts": {},
+            "filters": {},
+            "relationships": {},
+            "stats": {
+                "total": [
+                    "count"
+                ]
+            }
+        },
+        {
             "name": "GameResource",
             "type": "games",
             "graphql_entrypoint": "games",
@@ -918,6 +971,13 @@
         }
     ],
     "endpoints": {
+        "/api/v1/a_propos": {
+            "actions": {
+                "show": {
+                    "resource": "AProposResource"
+                }
+            }
+        },
         "/api/v1/games": {
             "actions": {
                 "index": {

@@ -110,8 +110,8 @@ docker login docker.lespyjamasrouges.fr
   d'une `*` (identifiants de `docker login`, lus dans `~/.docker/config.json`).
 
 Toujours une version précise (`latest` est refusé) : `.env` indique ce qui tourne.
-De l'extérieur, l'en-tête `X-Api-Version` de `/up` le dit aussi :
-`curl -sI https://ascacou-api.lespyjamasrouges.fr/up | grep -i x-api-version`.
+De l'extérieur, la ressource `a_propos` le dit aussi :
+`curl -s https://ascacou-api.lespyjamasrouges.fr/api/v1/a_propos | jq -r .data.attributes.version`.
 
 - **`compose.yaml` est remplacé à chaque `update`** : ne pas le modifier sur le serveur.
   Les réglages propres au serveur (ports, variables…) vont
